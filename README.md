@@ -104,6 +104,8 @@ and motivating educational experience.
 - **static/**: CSS, JavaScript, and images
 - **templates/**: HTML templates
 
+## Project Paper - [Here is the link to the project Paper](Final_Project_Paper_edumate%20(1).pdf)
+
 ## Contributing
 
 Contributions are welcome! Please feel free to submit a Pull Request.
