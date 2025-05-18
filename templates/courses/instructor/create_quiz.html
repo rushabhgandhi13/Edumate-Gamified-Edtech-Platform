@@ -1,0 +1,130 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Create Quiz - {{ content.title }}{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="row">
+        <!-- Sidebar -->
+        <div class="col-md-3">
+            <div class="card mb-4">
+                <div class="card-header bg-primary text-white">
+                    <h5 class="mb-0">Instructor Menu</h5>
+                </div>
+                <div class="list-group list-group-flush">
+                    <a href="{% url 'courses:instructor_dashboard' %}" class="list-group-item list-group-item-action">
+                        <i class="fas fa-tachometer-alt me-2"></i> Dashboard
+                    </a>
+                    <a href="{% url 'courses:instructor_courses' %}" class="list-group-item list-group-item-action">
+                        <i class="fas fa-book me-2"></i> My Courses
+                    </a>
+                    <a href="{% url 'courses:create_course' %}" class="list-group-item list-group-item-action">
+                        <i class="fas fa-plus-circle me-2"></i> Create Course
+                    </a>
+                </div>
+            </div>
+            
+            <div class="card mb-4">
+                <div class="card-header bg-info text-white">
+                    <h5 class="mb-0">Course Navigation</h5>
+                </div>
+                <div class="list-group list-group-flush">
+                    <a href="{% url 'courses:edit_course' course.id %}" class="list-group-item list-group-item-action">
+                        <i class="fas fa-edit me-2"></i> Edit Course Details
+                    </a>
+                    <a href="{% url 'courses:edit_course_modules' course.id %}" class="list-group-item list-group-item-action">
+                        <i class="fas fa-list me-2"></i> Manage Modules
+                    </a>
+                    <a href="{% url 'courses:module_content_list' module.id %}" class="list-group-item list-group-item-action">
+                        <i class="fas fa-arrow-left me-2"></i> Back to Module Content
+                    </a>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Main Content -->
+        <div class="col-md-9">
+            <div class="card">
+                <div class="card-header bg-primary text-white">
+                    <h4 class="mb-0">Create Quiz: {{ content.title }}</h4>
+                </div>
+                <div class="card-body">
+                    <nav aria-label="breadcrumb">
+                        <ol class="breadcrumb">
+                            <li class="breadcrumb-item"><a href="{% url 'courses:instructor_courses' %}">My Courses</a></li>
+                            <li class="breadcrumb-item"><a href="{% url 'courses:edit_course_modules' course.id %}">{{ course.title }}</a></li>
+                            <li class="breadcrumb-item"><a href="{% url 'courses:module_content_list' module.id %}">{{ module.title }}</a></li>
+                            <li class="breadcrumb-item active">Create Quiz</li>
+                        </ol>
+                    </nav>
+                    
+                    <form method="post">
+                        {% csrf_token %}
+                        
+                        <div class="mb-3">
+                            <label for="{{ form.title.id_for_label }}" class="form-label">Quiz Title</label>
+                            {{ form.title }}
+                            {% if form.title.errors %}
+                                <div class="text-danger">{{ form.title.errors }}</div>
+                            {% endif %}
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label for="{{ form.description.id_for_label }}" class="form-label">Description</label>
+                            {{ form.description }}
+                            <div class="form-text">Provide instructions or context for the quiz</div>
+                            {% if form.description.errors %}
+                                <div class="text-danger">{{ form.description.errors }}</div>
+                            {% endif %}
+                        </div>
+                        
+                        <div class="row">
+                            <div class="col-md-4">
+                                <div class="mb-3">
+                                    <label for="{{ form.time_limit.id_for_label }}" class="form-label">Time Limit (minutes)</label>
+                                    {{ form.time_limit }}
+                                    <div class="form-text">Set to 0 for no time limit</div>
+                                    {% if form.time_limit.errors %}
+                                        <div class="text-danger">{{ form.time_limit.errors }}</div>
+                                    {% endif %}
+                                </div>
+                            </div>
+                            <div class="col-md-4">
+                                <div class="mb-3">
+                                    <label for="{{ form.passing_score.id_for_label }}" class="form-label">Passing Score (%)</label>
+                                    {{ form.passing_score }}
+                                    <div class="form-text">Minimum percentage to pass the quiz</div>
+                                    {% if form.passing_score.errors %}
+                                        <div class="text-danger">{{ form.passing_score.errors }}</div>
+                                    {% endif %}
+                                </div>
+                            </div>
+                            <div class="col-md-4">
+                                <div class="mb-3">
+                                    <label for="{{ form.points_reward.id_for_label }}" class="form-label">Points Reward</label>
+                                    {{ form.points_reward }}
+                                    <div class="form-text">Points awarded for passing</div>
+                                    {% if form.points_reward.errors %}
+                                        <div class="text-danger">{{ form.points_reward.errors }}</div>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="alert alert-info">
+                            <i class="fas fa-info-circle me-2"></i>
+                            After creating the quiz, you'll be able to add questions and answers.
+                        </div>
+                        
+                        <div class="d-grid gap-2 d-md-flex justify-content-md-end">
+                            <a href="{% url 'courses:module_content_list' module.id %}" class="btn btn-secondary me-md-2">Cancel</a>
+                            <button type="submit" class="btn btn-primary">Create Quiz</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %} 

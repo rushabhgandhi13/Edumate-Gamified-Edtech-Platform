@@ -1,0 +1,188 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}{{ content.title }} - Quiz{% endblock %}
+
+{% block content %}
+<div class="container-fluid mt-4">
+    <div class="row">
+        <!-- Content Navigation Sidebar -->
+        <div class="col-md-3">
+            <div class="card mb-4">
+                <div class="card-header bg-primary text-white">
+                    <h5 class="mb-0">{{ module.title }}</h5>
+                </div>
+                <div class="list-group list-group-flush">
+                    {% for item in module.content_set.all %}
+                        <a href="{% url 'courses:view_content' item.id %}" class="list-group-item list-group-item-action {% if item.id == content.id %}active{% endif %}">
+                            <div class="d-flex w-100 justify-content-between align-items-center">
+                                <div>
+                                    <i class="
+                                        {% if item.video %}
+                                            {% if item.video.is_short %}fas fa-film{% else %}fas fa-video{% endif %}
+                                        {% elif item.blog %}
+                                            fas fa-file-alt
+                                        {% elif item.quiz %}
+                                            fas fa-question-circle
+                                        {% else %}
+                                            fas fa-file
+                                        {% endif %}
+                                        me-2
+                                    "></i>
+                                    {{ item.title }}
+                                </div>
+                                {% if item.is_completed %}
+                                    <i class="fas fa-check-circle {% if item.id == content.id %}text-white{% else %}text-success{% endif %}"></i>
+                                {% endif %}
+                            </div>
+                        </a>
+                    {% endfor %}
+                </div>
+                <div class="card-footer">
+                    <a href="{% url 'courses:course_content' course.slug %}" class="btn btn-outline-primary btn-sm w-100">
+                        <i class="fas fa-arrow-left me-1"></i> Back to Course
+                    </a>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Main Content Area -->
+        <div class="col-md-9">
+            <div class="card">
+                <div class="card-header bg-primary text-white d-flex justify-content-between align-items-center">
+                    <h4 class="mb-0">{{ content.title }}</h4>
+                    <span class="badge bg-warning text-dark">Quiz</span>
+                </div>
+                <div class="card-body">
+                    <div class="text-center mb-4">
+                        <i class="fas fa-question-circle fa-4x text-warning mb-3"></i>
+                        <h3>{{ content_data.title }}</h3>
+                    </div>
+                    
+                    <div class="row mb-4">
+                        <div class="col-md-8 offset-md-2">
+                            <div class="card">
+                                <div class="card-header bg-light">
+                                    <h5 class="mb-0">Quiz Information</h5>
+                                </div>
+                                <ul class="list-group list-group-flush">
+                                    <li class="list-group-item d-flex justify-content-between align-items-center">
+                                        Questions
+                                        <span class="badge bg-primary rounded-pill">{{ content_data.question_set.count }}</span>
+                                    </li>
+                                    <li class="list-group-item d-flex justify-content-between align-items-center">
+                                        Time Limit
+                                        <span>
+                                            {% if content_data.time_limit %}
+                                                {{ content_data.time_limit }} minutes
+                                            {% else %}
+                                                No time limit
+                                            {% endif %}
+                                        </span>
+                                    </li>
+                                    <li class="list-group-item d-flex justify-content-between align-items-center">
+                                        Passing Score
+                                        <span>{{ content_data.passing_score }}%</span>
+                                    </li>
+                                    <li class="list-group-item d-flex justify-content-between align-items-center">
+                                        Points Reward
+                                        <span class="badge bg-success">{{ content_data.points_reward }} points</span>
+                                    </li>
+                                    <li class="list-group-item d-flex justify-content-between align-items-center">
+                                        Attempts Allowed
+                                        <span>Unlimited</span>
+                                    </li>
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="mb-4">
+                        <h5>Description</h5>
+                        <p>{{ content_data.description }}</p>
+                    </div>
+                    
+                    {% if previous_attempts %}
+                        <div class="mb-4">
+                            <h5>Your Previous Attempts</h5>
+                            <div class="table-responsive">
+                                <table class="table table-hover">
+                                    <thead>
+                                        <tr>
+                                            <th>Attempt</th>
+                                            <th>Date</th>
+                                            <th>Score</th>
+                                            <th>Result</th>
+                                            <th>Actions</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        {% for attempt in previous_attempts %}
+                                            <tr>
+                                                <td>#{{ forloop.counter }}</td>
+                                                <td>{{ attempt.created_at|date:"M d, Y H:i" }}</td>
+                                                <td>{{ attempt.score|floatformat:1 }}%</td>
+                                                <td>
+                                                    {% if attempt.passed %}
+                                                        <span class="badge bg-success">Passed</span>
+                                                    {% else %}
+                                                        <span class="badge bg-danger">Failed</span>
+                                                    {% endif %}
+                                                </td>
+                                                <td>
+                                                    <a href="{% url 'courses:quiz_result' attempt.id %}" class="btn btn-sm btn-outline-info">
+                                                        <i class="fas fa-eye me-1"></i> View Results
+                                                    </a>
+                                                </td>
+                                            </tr>
+                                        {% endfor %}
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    {% endif %}
+                    
+                    <div class="text-center mt-4">
+                        <a href="{% url 'courses:take_quiz' content_data.id %}" class="btn btn-lg btn-warning">
+                            <i class="fas fa-play-circle me-2"></i>
+                            Start Quiz
+                        </a>
+                    </div>
+                    
+                    <!-- Navigation Buttons -->
+                    <div class="d-flex justify-content-between mt-5">
+                        {% if prev_content %}
+                            <a href="{% url 'courses:view_content' prev_content.id %}" class="btn btn-outline-primary">
+                                <i class="fas fa-arrow-left me-1"></i>
+                                Previous: {{ prev_content.title|truncatechars:20 }}
+                            </a>
+                        {% else %}
+                            <button class="btn btn-outline-secondary" disabled>
+                                <i class="fas fa-arrow-left me-1"></i>
+                                Previous
+                            </button>
+                        {% endif %}
+                        
+                        <a href="{% url 'courses:course_content' course.slug %}" class="btn btn-outline-info">
+                            <i class="fas fa-th-list me-1"></i>
+                            Course Overview
+                        </a>
+                        
+                        {% if next_content %}
+                            <a href="{% url 'courses:view_content' next_content.id %}" class="btn btn-outline-primary">
+                                Next: {{ next_content.title|truncatechars:20 }}
+                                <i class="fas fa-arrow-right ms-1"></i>
+                            </a>
+                        {% else %}
+                            <button class="btn btn-outline-secondary" disabled>
+                                Next
+                                <i class="fas fa-arrow-right ms-1"></i>
+                            </button>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %} 

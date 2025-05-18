@@ -1,0 +1,112 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}{{ quiz.title }} - Results | EduMate{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <nav aria-label="breadcrumb">
+        <ol class="breadcrumb">
+            <li class="breadcrumb-item"><a href="{% url 'courses:course_list' %}">Courses</a></li>
+            <li class="breadcrumb-item"><a href="{% url 'courses:course_detail' slug=course.slug %}">{{ course.title }}</a></li>
+            <li class="breadcrumb-item"><a href="{% url 'courses:quiz_detail' course_slug=course.slug quiz_id=quiz.id %}">{{ quiz.title }}</a></li>
+            <li class="breadcrumb-item active">Results</li>
+        </ol>
+    </nav>
+
+    <div class="card mb-4">
+        <div class="card-header bg-primary text-white d-flex justify-content-between align-items-center">
+            <h4 class="mb-0">{{ quiz.title }} - Results</h4>
+            <div>
+                {% if passed %}
+                <span class="badge bg-success">PASSED</span>
+                {% else %}
+                <span class="badge bg-danger">FAILED</span>
+                {% endif %}
+            </div>
+        </div>
+        <div class="card-body">
+            <!-- Results summary -->
+            <div class="row mb-4">
+                <div class="col-md-6">
+                    <div class="card h-100">
+                        <div class="card-header">
+                            <h5 class="mb-0">Score Summary</h5>
+                        </div>
+                        <div class="card-body text-center">
+                            <div class="display-4 fw-bold mb-3 {% if passed %}text-success{% else %}text-danger{% endif %}">
+                                {{ score_percentage|floatformat:1 }}%
+                            </div>
+                            
+                            <div class="progress mb-3" style="height: 25px;">
+                                <div class="progress-bar {% if passed %}bg-success{% else %}bg-danger{% endif %}" 
+                                     role="progressbar" 
+                                     style="width: {{ score_percentage }}%;" 
+                                     aria-valuenow="{{ score_percentage }}" 
+                                     aria-valuemin="0" 
+                                     aria-valuemax="100">
+                                    {{ score_percentage|floatformat:1 }}%
+                                </div>
+                            </div>
+                            
+                            <div class="row text-center mt-4">
+                                <div class="col-6">
+                                    <div class="h4">{{ attempt.score }} / {{ attempt.max_score }}</div>
+                                    <div class="text-muted">Score</div>
+                                </div>
+                                <div class="col-6">
+                                    <div class="h4">{{ quiz.passing_score }}%</div>
+                                    <div class="text-muted">Passing Score</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="col-md-6">
+                    <div class="card h-100">
+                        <div class="card-header">
+                            <h5 class="mb-0">Feedback</h5>
+                        </div>
+                        <div class="card-body">
+                            <p>
+                                {% if score_percentage >= 90 %}
+                                <i class="fas fa-trophy text-warning me-2"></i> Excellent work! You have a strong understanding of the material.
+                                {% elif score_percentage >= 80 %}
+                                <i class="fas fa-star text-primary me-2"></i> Great job! You have a good grasp of the material with a few areas to review.
+                                {% elif score_percentage >= 70 %}
+                                <i class="fas fa-thumbs-up text-success me-2"></i> Good effort! You understand most of the material but should review some concepts.
+                                {% elif score_percentage >= 60 %}
+                                <i class="fas fa-check text-info me-2"></i> You've passed, but there are several areas you should review to strengthen your understanding.
+                                {% else %}
+                                <i class="fas fa-book text-danger me-2"></i> You need to review the material more thoroughly. Focus on improving your understanding.
+                                {% endif %}
+                            </p>
+                            
+                            <div class="mt-4">
+                                <h6>Completed at:</h6>
+                                <p>{{ attempt.completed_at|date:"F j, Y, g:i a" }}</p>
+                                
+                                {% if attempt.duration %}
+                                <h6>Time taken:</h6>
+                                <p>{{ attempt.duration|floatformat:1 }} minutes</p>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="d-flex justify-content-between mt-4">
+                <a href="{% url 'courses:quiz_detail' course_slug=course.slug quiz_id=quiz.id %}" class="btn btn-secondary">
+                    <i class="fas fa-arrow-left me-2"></i> Back to Quiz
+                </a>
+                
+                <a href="{% url 'courses:course_content' slug=course.slug %}" class="btn btn-primary">
+                    <i class="fas fa-book me-2"></i> Continue Learning
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %} 

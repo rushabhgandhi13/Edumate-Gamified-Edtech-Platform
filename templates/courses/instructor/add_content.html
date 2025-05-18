@@ -1,0 +1,113 @@
+{% extends 'base.html' %}
+{% load crispy_forms_tags %}
+
+{% block title %}Add Content - {{ module.title }}{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="row">
+        <!-- Sidebar -->
+        <div class="col-md-3">
+            <div class="card mb-4">
+                <div class="card-header bg-primary text-white">
+                    <h5 class="mb-0">Course Navigation</h5>
+                </div>
+                <div class="list-group list-group-flush">
+                    <a href="{% url 'courses:course_detail' module.course.slug %}" class="list-group-item list-group-item-action">
+                        <i class="fas fa-arrow-left me-2"></i> Back to Course
+                    </a>
+                    <a href="{% url 'courses:module_content_list' module.id %}" class="list-group-item list-group-item-action">
+                        <i class="fas fa-list me-2"></i> Module Content
+                    </a>
+                </div>
+            </div>
+        </div>
+
+        <!-- Main Content -->
+        <div class="col-md-9">
+            <div class="card">
+                <div class="card-header bg-primary text-white">
+                    <h4 class="mb-0">Add Content to {{ module.title }}</h4>
+                </div>
+                <div class="card-body">
+                    <form method="post" enctype="multipart/form-data">
+                        {% csrf_token %}
+                        
+                        <div class="mb-3">
+                            <label for="content_type" class="form-label">Content Type</label>
+                            <select class="form-select" id="content_type" name="content_type">
+                                <option value="video">Video</option>
+                                <option value="lesson">Lesson</option>
+                                <option value="quiz">Quiz</option>
+                            </select>
+                        </div>
+
+                        <!-- Common Fields -->
+                        <div class="mb-3">
+                            <label for="title" class="form-label">Title</label>
+                            <input type="text" class="form-control" id="title" name="title" required>
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="order" class="form-label">Order</label>
+                            <input type="number" class="form-control" id="order" name="order" value="0">
+                        </div>
+
+                        <!-- Video Fields -->
+                        <div class="content-fields" id="video-fields">
+                            <div class="mb-3">
+                                <label for="video_url" class="form-label">Video URL</label>
+                                <input type="url" class="form-control" id="video_url" name="video_url">
+                                <small class="text-muted">Enter YouTube or Vimeo URL</small>
+                            </div>
+                        </div>
+
+                        <!-- Lesson Fields -->
+                        <div class="content-fields" id="lesson-fields" style="display: none;">
+                            <div class="mb-3">
+                                <label for="text_content" class="form-label">Lesson Content</label>
+                                <textarea class="form-control" id="text_content" name="text_content" rows="10"></textarea>
+                            </div>
+                        </div>
+
+                        <!-- Quiz Fields -->
+                        <div class="content-fields" id="quiz-fields" style="display: none;">
+                            <div class="mb-3">
+                                <label for="description" class="form-label">Quiz Description</label>
+                                <textarea class="form-control" id="description" name="description" rows="3"></textarea>
+                            </div>
+                            <div class="mb-3">
+                                <label for="time_limit" class="form-label">Time Limit (minutes)</label>
+                                <input type="number" class="form-control" id="time_limit" name="time_limit" value="30">
+                            </div>
+                            <div class="mb-3">
+                                <label for="passing_score" class="form-label">Passing Score (%)</label>
+                                <input type="number" class="form-control" id="passing_score" name="passing_score" value="70">
+                            </div>
+                        </div>
+
+                        <div class="text-end">
+                            <button type="submit" class="btn btn-primary">Add Content</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% block extra_js %}
+<script>
+document.getElementById('content_type').addEventListener('change', function() {
+    // Hide all content fields
+    document.querySelectorAll('.content-fields').forEach(function(el) {
+        el.style.display = 'none';
+    });
+    
+    // Show the selected content type fields
+    const selectedType = this.value;
+    document.getElementById(selectedType + '-fields').style.display = 'block';
+});
+</script>
+{% endblock %}
+{% endblock %} 

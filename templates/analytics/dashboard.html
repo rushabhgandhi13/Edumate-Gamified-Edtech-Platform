@@ -1,0 +1,335 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Learning Dashboard{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'css/analytics.css' %}">
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+{% endblock %}
+
+{% block content %}
+<div class="container my-4">
+    <h1 class="mb-4">Learning Dashboard</h1>
+    
+    <div class="row mb-4">
+        <div class="col-md-8">
+            <div class="card shadow-sm">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <h5 class="mb-0">Performance Metrics</h5>
+                    <span class="badge bg-info">Last 30 Days</span>
+                </div>
+                <div class="card-body">
+                    <canvas id="performanceChart" height="250"></canvas>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="card shadow-sm h-100">
+                <div class="card-header">
+                    <h5 class="mb-0">Quiz Performance</h5>
+                </div>
+                <div class="card-body">
+                    <div class="d-flex justify-content-between">
+                        <div>
+                            <h2 class="fw-bold text-primary">{{ quiz_metrics.avg_score|floatformat:1 }}%</h2>
+                            <p class="text-muted">Average Score</p>
+                        </div>
+                        <div>
+                            <h2 class="fw-bold text-success">{{ quiz_metrics.passed_count }}</h2>
+                            <p class="text-muted">Quizzes Passed</p>
+                        </div>
+                    </div>
+                    
+                    <hr>
+                    
+                    <h6>Recent Quiz Attempts</h6>
+                    {% if quiz_metrics.recent_attempts %}
+                        <ul class="list-group list-group-flush">
+                            {% for attempt in quiz_metrics.recent_attempts %}
+                                <li class="list-group-item d-flex justify-content-between align-items-center px-0">
+                                    <span>{{ attempt.quiz.title|truncatechars:20 }}</span>
+                                    <span class="badge {% if attempt.passed %}bg-success{% else %}bg-danger{% endif %}">
+                                        {{ attempt.score }}%
+                                    </span>
+                                </li>
+                            {% endfor %}
+                        </ul>
+                    {% else %}
+                        <p class="text-muted">No recent quiz attempts.</p>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="row mb-4">
+        <div class="col-md-6">
+            <div class="card shadow-sm">
+                <div class="card-header">
+                    <h5 class="mb-0">Learning Insights</h5>
+                </div>
+                <div class="card-body">
+                    {% if insights %}
+                        {% for insight in insights %}
+                            <div class="card mb-2">
+                                <div class="card-body p-3">
+                                    <h6 class="card-title">{{ insight.title }}</h6>
+                                    <p class="card-text small">{{ insight.description }}</p>
+                                    <div class="d-flex justify-content-between">
+                                        <span class="badge bg-secondary">{{ insight.get_insight_type_display }}</span>
+                                        <small class="text-muted">{{ insight.created_at|date:"M d, Y" }}</small>
+                                    </div>
+                                </div>
+                            </div>
+                        {% endfor %}
+                        <a href="{% url 'learning_insights' %}" class="btn btn-outline-primary btn-sm mt-2">View All Insights</a>
+                    {% else %}
+                        <p class="text-muted">No insights generated yet.</p>
+                        <a href="{% url 'generate_insight' %}" class="btn btn-primary btn-sm">Generate Insights</a>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-md-6">
+            <div class="card shadow-sm">
+                <div class="card-header">
+                    <h5 class="mb-0">Personalized Recommendations</h5>
+                </div>
+                <div class="card-body">
+                    {% if recommendations %}
+                        {% for recommendation in recommendations %}
+                            <div class="card mb-2">
+                                <div class="card-body p-3">
+                                    <h6 class="card-title">{{ recommendation.title }}</h6>
+                                    <p class="card-text small">{{ recommendation.description }}</p>
+                                    <div class="d-flex justify-content-between">
+                                        <div>
+                                            <span class="badge {% if recommendation.urgency == 'high' %}bg-danger{% elif recommendation.urgency == 'medium' %}bg-warning{% else %}bg-info{% endif %}">
+                                                {{ recommendation.get_urgency_display }}
+                                            </span>
+                                            <span class="badge bg-secondary">{{ recommendation.get_recommendation_type_display }}</span>
+                                        </div>
+                                        <button class="btn btn-sm btn-outline-secondary dismiss-recommendation" 
+                                                data-id="{{ recommendation.id }}">Dismiss</button>
+                                    </div>
+                                </div>
+                            </div>
+                        {% endfor %}
+                        <a href="{% url 'generate_recommendation' %}" class="btn btn-outline-primary btn-sm mt-2">Get New Recommendation</a>
+                    {% else %}
+                        <p class="text-muted">No recommendations available.</p>
+                        <a href="{% url 'generate_recommendation' %}" class="btn btn-primary btn-sm">Generate Recommendation</a>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="row mb-4">
+        <div class="col-md-4">
+            <div class="card shadow-sm">
+                <div class="card-header">
+                    <h5 class="mb-0">Course Progress</h5>
+                </div>
+                <div class="card-body">
+                    <div class="d-flex justify-content-between mb-3">
+                        <div>
+                            <h2 class="fw-bold text-primary">{{ course_metrics.active_count }}</h2>
+                            <p class="text-muted">Active Courses</p>
+                        </div>
+                        <div>
+                            <h2 class="fw-bold text-success">{{ course_metrics.completed_count }}</h2>
+                            <p class="text-muted">Completed</p>
+                        </div>
+                    </div>
+                    
+                    {% if course_metrics.recent_courses %}
+                        <h6>Recent Courses</h6>
+                        <ul class="list-group list-group-flush">
+                            {% for enrollment in course_metrics.recent_courses %}
+                                <li class="list-group-item px-0">
+                                    <div class="d-flex justify-content-between align-items-center">
+                                        <a href="{% url 'course_detail' enrollment.course.slug %}">
+                                            {{ enrollment.course.title|truncatechars:25 }}
+                                        </a>
+                                        <span class="badge bg-primary">{{ enrollment.overall_progress|floatformat:0 }}%</span>
+                                    </div>
+                                </li>
+                            {% endfor %}
+                        </ul>
+                    {% else %}
+                        <p class="text-muted">No courses enrolled.</p>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-md-4">
+            <div class="card shadow-sm">
+                <div class="card-header">
+                    <h5 class="mb-0">Learning Streak</h5>
+                </div>
+                <div class="card-body text-center">
+                    <div class="display-1 mb-3">🔥</div>
+                    <h2 class="fw-bold text-primary">{{ streak_data.current }} days</h2>
+                    <p class="text-muted">Current Streak</p>
+                    <hr>
+                    <p class="mb-1">Best streak: <span class="fw-bold">{{ streak_data.best }} days</span></p>
+                    <p class="text-muted small">Keep learning daily to maintain your streak!</p>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-md-4">
+            <div class="card shadow-sm">
+                <div class="card-header">
+                    <h5 class="mb-0">Learning Style</h5>
+                </div>
+                <div class="card-body">
+                    {% if learning_style %}
+                        <div class="mb-3">
+                            <h6>Primary Style</h6>
+                            <div class="progress mb-2">
+                                <div class="progress-bar bg-primary" role="progressbar" style="width: 100%;" 
+                                     aria-valuenow="100" aria-valuemin="0" aria-valuemax="100">
+                                    {{ learning_style.get_primary_style_display }}
+                                </div>
+                            </div>
+                            
+                            <h6>Secondary Style</h6>
+                            <div class="progress mb-2">
+                                <div class="progress-bar bg-info" role="progressbar" style="width: 75%;" 
+                                     aria-valuenow="75" aria-valuemin="0" aria-valuemax="100">
+                                    {{ learning_style.get_secondary_style_display }}
+                                </div>
+                            </div>
+                            
+                            <h6>Learning Pace</h6>
+                            <div class="progress">
+                                <div class="progress-bar bg-success" role="progressbar" style="width: 50%;" 
+                                     aria-valuenow="50" aria-valuemin="0" aria-valuemax="100">
+                                    {{ learning_style.get_pace_preference_display }}
+                                </div>
+                            </div>
+                        </div>
+                        <a href="{% url 'learning_style' %}" class="btn btn-outline-primary btn-sm">View Full Profile</a>
+                    {% else %}
+                        <p class="text-muted">Learning style not detected yet.</p>
+                        <a href="{% url 'learning_style' %}" class="btn btn-primary btn-sm">Determine Style</a>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Performance Chart
+    const performanceData = {{ performance_data|safe }};
+    const pointData = {{ point_data|safe }};
+    
+    if (performanceData.length > 0) {
+        const ctx = document.getElementById('performanceChart').getContext('2d');
+        
+        const dates = performanceData.map(item => item.date);
+        const scores = performanceData.map(item => item.score);
+        const timeSpent = performanceData.map(item => item.time);
+        const completed = performanceData.map(item => item.completed);
+        const points = pointData.map(item => item.points);
+        
+        new Chart(ctx, {
+            type: 'line',
+            data: {
+                labels: dates,
+                datasets: [
+                    {
+                        label: 'Quiz Score (%)',
+                        data: scores,
+                        borderColor: 'rgb(75, 192, 192)',
+                        tension: 0.1,
+                        yAxisID: 'y',
+                    },
+                    {
+                        label: 'Points Earned',
+                        data: points,
+                        borderColor: 'rgb(153, 102, 255)',
+                        tension: 0.1,
+                        yAxisID: 'y1',
+                    }
+                ]
+            },
+            options: {
+                responsive: true,
+                scales: {
+                    y: {
+                        type: 'linear',
+                        display: true,
+                        position: 'left',
+                        title: {
+                            display: true,
+                            text: 'Quiz Score (%)'
+                        },
+                        min: 0,
+                        max: 100
+                    },
+                    y1: {
+                        type: 'linear',
+                        display: true,
+                        position: 'right',
+                        title: {
+                            display: true,
+                            text: 'Points'
+                        },
+                        min: 0,
+                        grid: {
+                            drawOnChartArea: false,
+                        },
+                    }
+                }
+            }
+        });
+    }
+    
+    // Dismiss recommendation
+    document.querySelectorAll('.dismiss-recommendation').forEach(button => {
+        button.addEventListener('click', function() {
+            const recommendationId = this.getAttribute('data-id');
+            fetch(`/analytics/recommendation/${recommendationId}/dismiss/`, {
+                method: 'POST',
+                headers: {
+                    'X-CSRFToken': getCookie('csrftoken'),
+                    'Content-Type': 'application/json'
+                }
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.status === 'success') {
+                    this.closest('.card').remove();
+                }
+            });
+        });
+    });
+    
+    // Helper function to get cookies
+    function getCookie(name) {
+        let cookieValue = null;
+        if (document.cookie && document.cookie !== '') {
+            const cookies = document.cookie.split(';');
+            for (let i = 0; i < cookies.length; i++) {
+                const cookie = cookies[i].trim();
+                if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                    cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                    break;
+                }
+            }
+        }
+        return cookieValue;
+    }
+});
+</script>
+{% endblock %} 

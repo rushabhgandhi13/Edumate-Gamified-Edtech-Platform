@@ -1,0 +1,525 @@
+{% extends 'base.html' %}
+
+{% block title %}Instructor Analytics - EduMate{% endblock %}
+
+{% block content %}
+<div class="container py-5">
+    <h1 class="mb-4">Instructor Analytics Dashboard</h1>
+    
+    <!-- Course Enrollment Summary -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card shadow-sm">
+                <div class="card-header bg-primary text-white">
+                    <h5 class="card-title mb-0">
+                        <i class="fas fa-users me-2"></i> Course Enrollment Summary
+                    </h5>
+                </div>
+                <div class="card-body">
+                    {% if course_enrollments %}
+                    <div class="table-responsive">
+                        <table class="table table-hover">
+                            <thead>
+                                <tr>
+                                    <th>Course</th>
+                                    <th>Enrollments</th>
+                                    <th>Completion Rate</th>
+                                    <th>Average Rating</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for course_data in course_enrollments %}
+                                <tr>
+                                    <td>
+                                        <a href="{% url 'courses:course_detail' course_data.course.slug %}">
+                                            {{ course_data.course.title }}
+                                        </a>
+                                    </td>
+                                    <td>{{ course_data.enrollments }}</td>
+                                    <td>
+                                        <div class="d-flex align-items-center">
+                                            <div class="progress flex-grow-1 me-2" style="height: 8px;">
+                                                <div class="progress-bar bg-success" role="progressbar" 
+                                                     style="width: {{ course_data.completion_rate }}%;" 
+                                                     aria-valuenow="{{ course_data.completion_rate }}" 
+                                                     aria-valuemin="0" 
+                                                     aria-valuemax="100">
+                                                </div>
+                                            </div>
+                                            <span>{{ course_data.completion_rate|floatformat:1 }}%</span>
+                                        </div>
+                                    </td>
+                                    <td>
+                                        <div class="d-flex align-items-center">
+                                            <div class="me-2">
+                                                {% for i in "12345" %}
+                                                    {% if forloop.counter <= course_data.avg_rating|floatformat:"0" %}
+                                                    <i class="fas fa-star text-warning"></i>
+                                                    {% else %}
+                                                    <i class="far fa-star text-warning"></i>
+                                                    {% endif %}
+                                                {% endfor %}
+                                            </div>
+                                            <span>({{ course_data.avg_rating|floatformat:1 }})</span>
+                                        </div>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                    {% else %}
+                    <div class="alert alert-info">
+                        You don't have any courses with enrollments yet.
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Quiz Performance Analysis -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card shadow-sm">
+                <div class="card-header bg-success text-white">
+                    <h5 class="card-title mb-0">
+                        <i class="fas fa-chart-line me-2"></i> Quiz Performance Analysis
+                    </h5>
+                </div>
+                <div class="card-body">
+                    {% if quiz_performance %}
+                    <div class="row mb-4">
+                        <div class="col-md-8">
+                            <canvas id="quizPerformanceChart" height="300"></canvas>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="card h-100">
+                                <div class="card-header bg-light">
+                                    <h6 class="card-title mb-0">Performance Insights</h6>
+                                </div>
+                                <div class="card-body">
+                                    <ul class="list-group list-group-flush">
+                                        {% with avg_all=quiz_performance|dictsort:"avg_score"|last %}
+                                        <li class="list-group-item d-flex justify-content-between align-items-center">
+                                            <span>Highest Performing Quiz</span>
+                                            <span class="badge bg-success rounded-pill">
+                                                {{ avg_all.avg_score|floatformat:1 }}%
+                                            </span>
+                                        </li>
+                                        {% endwith %}
+                                        
+                                        {% with avg_low=quiz_performance|dictsort:"avg_score"|first %}
+                                        <li class="list-group-item d-flex justify-content-between align-items-center">
+                                            <span>Lowest Performing Quiz</span>
+                                            <span class="badge bg-danger rounded-pill">
+                                                {{ avg_low.avg_score|floatformat:1 }}%
+                                            </span>
+                                        </li>
+                                        {% endwith %}
+                                        
+                                        {% with total_attempts=quiz_performance|dictsortreversed:"attempts"|first %}
+                                        <li class="list-group-item d-flex justify-content-between align-items-center">
+                                            <span>Most Attempted Quiz</span>
+                                            <span class="badge bg-primary rounded-pill">
+                                                {{ total_attempts.attempts }} attempts
+                                            </span>
+                                        </li>
+                                        {% endwith %}
+                                        
+                                        {% with avg_all_score=quiz_performance|dictsort:"avg_score"|last %}
+                                        <li class="list-group-item d-flex justify-content-between align-items-center">
+                                            <span>Overall Average Score</span>
+                                            <span class="badge bg-info rounded-pill">
+                                                {{ avg_all_score.avg_score|floatformat:1 }}%
+                                            </span>
+                                        </li>
+                                        {% endwith %}
+                                    </ul>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="table-responsive">
+                        <table class="table table-hover">
+                            <thead>
+                                <tr>
+                                    <th>Quiz</th>
+                                    <th>Course</th>
+                                    <th>Average Score</th>
+                                    <th>Attempts</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for quiz_data in quiz_performance %}
+                                <tr>
+                                    <td>{{ quiz_data.quiz.title }}</td>
+                                    <td>{{ quiz_data.course.title }}</td>
+                                    <td>
+                                        <div class="d-flex align-items-center">
+                                            <div class="progress flex-grow-1 me-2" style="height: 8px;">
+                                                <div class="progress-bar {% if quiz_data.avg_score < 60 %}bg-danger{% elif quiz_data.avg_score < 80 %}bg-warning{% else %}bg-success{% endif %}" 
+                                                     role="progressbar" 
+                                                     style="width: {{ quiz_data.avg_score }}%;" 
+                                                     aria-valuenow="{{ quiz_data.avg_score }}" 
+                                                     aria-valuemin="0" 
+                                                     aria-valuemax="100">
+                                                </div>
+                                            </div>
+                                            <span>{{ quiz_data.avg_score|floatformat:1 }}%</span>
+                                        </div>
+                                    </td>
+                                    <td>{{ quiz_data.attempts }}</td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                    {% else %}
+                    <div class="alert alert-info">
+                        No quiz performance data available yet. Students need to attempt quizzes to generate analytics.
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Student Engagement Analysis -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card shadow-sm">
+                <div class="card-header bg-info text-white">
+                    <h5 class="card-title mb-0">
+                        <i class="fas fa-users me-2"></i> Student Engagement Analysis
+                    </h5>
+                </div>
+                <div class="card-body">
+                    {% if student_engagement %}
+                    <div class="row mb-4">
+                        <div class="col-md-6">
+                            <canvas id="engagementChart" height="300"></canvas>
+                        </div>
+                        <div class="col-md-6">
+                            <canvas id="completionChart" height="300"></canvas>
+                        </div>
+                    </div>
+                    
+                    <div class="table-responsive">
+                        <table class="table table-hover">
+                            <thead>
+                                <tr>
+                                    <th>Course</th>
+                                    <th>Total Students</th>
+                                    <th>Active Students</th>
+                                    <th>Completion Rate</th>
+                                    <th>Avg. Time Spent</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for engagement in student_engagement %}
+                                <tr>
+                                    <td>{{ engagement.course.title }}</td>
+                                    <td>{{ engagement.total_students }}</td>
+                                    <td>
+                                        <div class="d-flex align-items-center">
+                                            <div class="progress flex-grow-1 me-2" style="height: 8px;">
+                                                <div class="progress-bar bg-primary" role="progressbar" 
+                                                     style="width: {{ engagement.active_percentage }}%;" 
+                                                     aria-valuenow="{{ engagement.active_percentage }}" 
+                                                     aria-valuemin="0" 
+                                                     aria-valuemax="100">
+                                                </div>
+                                            </div>
+                                            <span>{{ engagement.active_students }} ({{ engagement.active_percentage|floatformat:1 }}%)</span>
+                                        </div>
+                                    </td>
+                                    <td>
+                                        <div class="d-flex align-items-center">
+                                            <div class="progress flex-grow-1 me-2" style="height: 8px;">
+                                                <div class="progress-bar bg-success" role="progressbar" 
+                                                     style="width: {{ engagement.completion_percentage }}%;" 
+                                                     aria-valuenow="{{ engagement.completion_percentage }}" 
+                                                     aria-valuemin="0" 
+                                                     aria-valuemax="100">
+                                                </div>
+                                            </div>
+                                            <span>{{ engagement.completion_percentage|floatformat:1 }}%</span>
+                                        </div>
+                                    </td>
+                                    <td>{{ engagement.avg_time_spent|floatformat:0 }} min</td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                    {% else %}
+                    <div class="alert alert-info">
+                        No student engagement data available yet. This will populate as students interact with your courses.
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Student Badges -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card shadow-sm">
+                <div class="card-header bg-warning text-dark">
+                    <h5 class="card-title mb-0">
+                        <i class="fas fa-medal me-2"></i> Student Badges & Achievements
+                    </h5>
+                </div>
+                <div class="card-body">
+                    {% if badge_stats %}
+                    <div class="row mb-4">
+                        <div class="col-md-6">
+                            <h6 class="border-bottom pb-2 mb-3">Most Popular Badges</h6>
+                            <div class="table-responsive">
+                                <table class="table table-hover">
+                                    <thead>
+                                        <tr>
+                                            <th>Badge</th>
+                                            <th>Type</th>
+                                            <th>Times Awarded</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        {% for badge in badge_stats %}
+                                        <tr>
+                                            <td>
+                                                <div class="d-flex align-items-center">
+                                                    <i class="fas {{ badge.icon }} fa-lg me-2"></i>
+                                                    {{ badge.name }}
+                                                </div>
+                                            </td>
+                                            <td><span class="badge bg-secondary">{{ badge.get_badge_type_display }}</span></td>
+                                            <td>{{ badge.award_count }}</td>
+                                        </tr>
+                                        {% endfor %}
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <h6 class="border-bottom pb-2 mb-3">Recent Badge Awards</h6>
+                            <div class="list-group">
+                                {% for award in recent_badge_awards %}
+                                <div class="list-group-item list-group-item-action">
+                                    <div class="d-flex w-100 justify-content-between">
+                                        <h6 class="mb-1">{{ award.user.username }} earned {{ award.badge.name }}</h6>
+                                        <small>{{ award.earned_at|date:"M d, Y" }}</small>
+                                    </div>
+                                    <p class="mb-1"><small>{{ award.badge.description }}</small></p>
+                                </div>
+                                {% endfor %}
+                            </div>
+                        </div>
+                    </div>
+                    <div class="alert alert-info">
+                        <i class="fas fa-info-circle me-2"></i>
+                        <strong>{{ enrolled_students_count }}</strong> students have earned badges in your courses. Badges help increase student engagement and motivation.
+                    </div>
+                    {% else %}
+                    <div class="alert alert-info">
+                        <i class="fas fa-info-circle me-2"></i>
+                        No badge data available yet. As students earn badges, stats will appear here.
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% if quiz_performance or student_engagement %}
+{% block extra_js %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        {% if quiz_performance %}
+        // Quiz Performance Chart
+        const quizCtx = document.getElementById('quizPerformanceChart').getContext('2d');
+        
+        const quizLabels = [
+            {% for quiz_data in quiz_performance %}
+                "{{ quiz_data.quiz.title|truncatechars:20 }}",
+            {% endfor %}
+        ];
+        
+        const quizScores = [
+            {% for quiz_data in quiz_performance %}
+                {{ quiz_data.avg_score }},
+            {% endfor %}
+        ];
+        
+        const quizAttempts = [
+            {% for quiz_data in quiz_performance %}
+                {{ quiz_data.attempts }},
+            {% endfor %}
+        ];
+        
+        new Chart(quizCtx, {
+            type: 'bar',
+            data: {
+                labels: quizLabels,
+                datasets: [
+                    {
+                        label: 'Average Score (%)',
+                        data: quizScores,
+                        backgroundColor: 'rgba(75, 192, 192, 0.6)',
+                        borderColor: 'rgba(75, 192, 192, 1)',
+                        borderWidth: 1,
+                        yAxisID: 'y'
+                    },
+                    {
+                        label: 'Attempts',
+                        data: quizAttempts,
+                        backgroundColor: 'rgba(153, 102, 255, 0.6)',
+                        borderColor: 'rgba(153, 102, 255, 1)',
+                        borderWidth: 1,
+                        yAxisID: 'y1'
+                    }
+                ]
+            },
+            options: {
+                responsive: true,
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        position: 'left',
+                        title: {
+                            display: true,
+                            text: 'Average Score (%)'
+                        },
+                        max: 100
+                    },
+                    y1: {
+                        beginAtZero: true,
+                        position: 'right',
+                        title: {
+                            display: true,
+                            text: 'Attempts'
+                        },
+                        grid: {
+                            drawOnChartArea: false
+                        }
+                    }
+                }
+            }
+        });
+        {% endif %}
+        
+        {% if student_engagement %}
+        // Engagement Chart
+        const engagementCtx = document.getElementById('engagementChart').getContext('2d');
+        
+        const courseLabels = [
+            {% for engagement in student_engagement %}
+                "{{ engagement.course.title|truncatechars:20 }}",
+            {% endfor %}
+        ];
+        
+        const activePercentages = [
+            {% for engagement in student_engagement %}
+                {{ engagement.active_percentage }},
+            {% endfor %}
+        ];
+        
+        new Chart(engagementCtx, {
+            type: 'doughnut',
+            data: {
+                labels: courseLabels,
+                datasets: [{
+                    label: 'Active Students (%)',
+                    data: activePercentages,
+                    backgroundColor: [
+                        'rgba(255, 99, 132, 0.6)',
+                        'rgba(54, 162, 235, 0.6)',
+                        'rgba(255, 206, 86, 0.6)',
+                        'rgba(75, 192, 192, 0.6)',
+                        'rgba(153, 102, 255, 0.6)',
+                        'rgba(255, 159, 64, 0.6)'
+                    ],
+                    borderColor: [
+                        'rgba(255, 99, 132, 1)',
+                        'rgba(54, 162, 235, 1)',
+                        'rgba(255, 206, 86, 1)',
+                        'rgba(75, 192, 192, 1)',
+                        'rgba(153, 102, 255, 1)',
+                        'rgba(255, 159, 64, 1)'
+                    ],
+                    borderWidth: 1
+                }]
+            },
+            options: {
+                responsive: true,
+                plugins: {
+                    legend: {
+                        position: 'right',
+                    },
+                    title: {
+                        display: true,
+                        text: 'Active Students by Course'
+                    }
+                }
+            }
+        });
+        
+        // Completion Chart
+        const completionCtx = document.getElementById('completionChart').getContext('2d');
+        
+        const completionPercentages = [
+            {% for engagement in student_engagement %}
+                {{ engagement.completion_percentage }},
+            {% endfor %}
+        ];
+        
+        new Chart(completionCtx, {
+            type: 'pie',
+            data: {
+                labels: courseLabels,
+                datasets: [{
+                    label: 'Completion Rate (%)',
+                    data: completionPercentages,
+                    backgroundColor: [
+                        'rgba(255, 99, 132, 0.6)',
+                        'rgba(54, 162, 235, 0.6)',
+                        'rgba(255, 206, 86, 0.6)',
+                        'rgba(75, 192, 192, 0.6)',
+                        'rgba(153, 102, 255, 0.6)',
+                        'rgba(255, 159, 64, 0.6)'
+                    ],
+                    borderColor: [
+                        'rgba(255, 99, 132, 1)',
+                        'rgba(54, 162, 235, 1)',
+                        'rgba(255, 206, 86, 1)',
+                        'rgba(75, 192, 192, 1)',
+                        'rgba(153, 102, 255, 1)',
+                        'rgba(255, 159, 64, 1)'
+                    ],
+                    borderWidth: 1
+                }]
+            },
+            options: {
+                responsive: true,
+                plugins: {
+                    legend: {
+                        position: 'right',
+                    },
+                    title: {
+                        display: true,
+                        text: 'Course Completion Rates'
+                    }
+                }
+            }
+        });
+        {% endif %}
+    });
+</script>
+{% endblock %}
+{% endif %}
+{% endblock %} 

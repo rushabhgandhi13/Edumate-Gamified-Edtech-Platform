@@ -1,0 +1,75 @@
+{% extends 'base.html' %}
+
+{% block title %}Achievements - EduMate{% endblock %}
+
+{% block content %}
+<div class="container py-5">
+    <h1 class="mb-4">Achievements</h1>
+    
+    <div class="row mb-4">
+        <div class="col-md-8">
+            <div class="progress" style="height: 30px;">
+                {% with total_achievements=all_achievements.count completed_achievements=user_achievements.count %}
+                {% if total_achievements > 0 %}
+                <div class="progress-bar bg-success" role="progressbar" 
+                     style="width: {{ completed_achievements|floatformat:0 }}%;" 
+                     aria-valuenow="{{ completed_achievements }}" 
+                     aria-valuemin="0" 
+                     aria-valuemax="{{ total_achievements }}">
+                    {{ completed_achievements }} / {{ total_achievements }} Achievements
+                </div>
+                {% else %}
+                <div class="progress-bar" role="progressbar" style="width: 0%;" 
+                     aria-valuenow="0" aria-valuemin="0" aria-valuemax="100">
+                    No achievements available
+                </div>
+                {% endif %}
+                {% endwith %}
+            </div>
+        </div>
+        <div class="col-md-4 text-end">
+            <h4>
+                <span class="badge bg-primary">{{ user_achievements.count }}</span> Achievements Unlocked
+            </h4>
+        </div>
+    </div>
+    
+    <div class="row">
+        {% for achievement in all_achievements %}
+        <div class="col-md-4 mb-4">
+            <div class="card h-100 {% if achievement in user_achievements %}border-success{% else %}border-light{% endif %}">
+                <div class="card-header {% if achievement in user_achievements %}bg-success text-white{% endif %}">
+                    <h5 class="card-title mb-0">{{ achievement.name }}</h5>
+                </div>
+                <div class="card-body">
+                    <p class="card-text">{{ achievement.description }}</p>
+                    <p class="text-muted">
+                        <small>
+                            <i class="fas fa-trophy"></i> 
+                            {{ achievement.points_awarded }} points
+                        </small>
+                    </p>
+                </div>
+                <div class="card-footer text-center">
+                    {% if achievement in user_achievements %}
+                    <span class="badge bg-success">
+                        <i class="fas fa-check-circle"></i> Unlocked
+                    </span>
+                    {% else %}
+                    <span class="badge bg-secondary">
+                        <i class="fas fa-lock"></i> Locked
+                    </span>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+        {% empty %}
+        <div class="col-12">
+            <div class="alert alert-info">
+                No achievements available yet. Check back soon!
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+</div>
+{% endblock %} 

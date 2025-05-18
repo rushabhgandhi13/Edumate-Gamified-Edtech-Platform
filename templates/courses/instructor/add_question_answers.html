@@ -1,0 +1,206 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Add Answers - Question{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="row">
+        <!-- Sidebar -->
+        <div class="col-md-3">
+            <div class="card mb-4">
+                <div class="card-header bg-primary text-white">
+                    <h5 class="mb-0">Instructor Menu</h5>
+                </div>
+                <div class="list-group list-group-flush">
+                    <a href="{% url 'courses:instructor_dashboard' %}" class="list-group-item list-group-item-action">
+                        <i class="fas fa-tachometer-alt me-2"></i> Dashboard
+                    </a>
+                    <a href="{% url 'courses:instructor_courses' %}" class="list-group-item list-group-item-action">
+                        <i class="fas fa-book me-2"></i> My Courses
+                    </a>
+                    <a href="{% url 'courses:create_course' %}" class="list-group-item list-group-item-action">
+                        <i class="fas fa-plus-circle me-2"></i> Create Course
+                    </a>
+                </div>
+            </div>
+            
+            <div class="card mb-4">
+                <div class="card-header bg-info text-white">
+                    <h5 class="mb-0">Quiz Navigation</h5>
+                </div>
+                <div class="list-group list-group-flush">
+                    <a href="{% url 'courses:module_content_list' module.id %}" class="list-group-item list-group-item-action">
+                        <i class="fas fa-arrow-left me-2"></i> Back to Module Content
+                    </a>
+                    <a href="{% url 'courses:quiz_questions_list' quiz.id %}" class="list-group-item list-group-item-action">
+                        <i class="fas fa-list me-2"></i> View All Questions
+                    </a>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Main Content -->
+        <div class="col-md-9">
+            <div class="card">
+                <div class="card-header bg-primary text-white">
+                    <h4 class="mb-0">Add Answers to Question</h4>
+                </div>
+                <div class="card-body">
+                    <nav aria-label="breadcrumb">
+                        <ol class="breadcrumb">
+                            <li class="breadcrumb-item"><a href="{% url 'courses:instructor_courses' %}">My Courses</a></li>
+                            <li class="breadcrumb-item"><a href="{% url 'courses:edit_course_modules' course.id %}">{{ course.title }}</a></li>
+                            <li class="breadcrumb-item"><a href="{% url 'courses:module_content_list' module.id %}">{{ module.title }}</a></li>
+                            <li class="breadcrumb-item"><a href="{% url 'courses:quiz_questions_list' quiz.id %}">Quiz Questions</a></li>
+                            <li class="breadcrumb-item active">Add Answers</li>
+                        </ol>
+                    </nav>
+                    
+                    <div class="card mb-4">
+                        <div class="card-header bg-light">
+                            <h5 class="mb-0">Question</h5>
+                        </div>
+                        <div class="card-body">
+                            <p><strong>{{ question.text }}</strong></p>
+                            <p><strong>Type:</strong> {{ question.get_question_type_display }}</p>
+                            <p><strong>Points:</strong> {{ question.points }}</p>
+                        </div>
+                    </div>
+                    
+                    {% if question.question_type == 'text' %}
+                        <div class="alert alert-info">
+                            <i class="fas fa-info-circle me-2"></i>
+                            This is a text question. Students will provide written answers that you'll need to review manually.
+                        </div>
+                    {% else %}
+                        <form method="post">
+                            {% csrf_token %}
+                            {{ formset.management_form }}
+                            
+                            <div class="answer-formset">
+                                {% for form in formset %}
+                                    <div class="card mb-3 answer-form">
+                                        <div class="card-header bg-light d-flex justify-content-between align-items-center">
+                                            <h5 class="mb-0">Answer {{ forloop.counter }}</h5>
+                                            {% if formset.can_delete %}
+                                                <div class="form-check">
+                                                    {{ form.DELETE }}
+                                                    <label class="form-check-label text-danger" for="{{ form.DELETE.id_for_label }}">
+                                                        Delete this answer
+                                                    </label>
+                                                </div>
+                                            {% endif %}
+                                        </div>
+                                        <div class="card-body">
+                                            {{ form.id }}
+                                            
+                                            <div class="mb-3">
+                                                <label for="{{ form.text.id_for_label }}" class="form-label">Answer Text</label>
+                                                {{ form.text }}
+                                                {% if form.text.errors %}
+                                                    <div class="text-danger">{{ form.text.errors }}</div>
+                                                {% endif %}
+                                            </div>
+                                            
+                                            <div class="mb-3 form-check">
+                                                {{ form.is_correct }}
+                                                <label class="form-check-label" for="{{ form.is_correct.id_for_label }}">
+                                                    Correct Answer
+                                                </label>
+                                                <div class="form-text">Mark this as the correct answer</div>
+                                                {% if form.is_correct.errors %}
+                                                    <div class="text-danger">{{ form.is_correct.errors }}</div>
+                                                {% endif %}
+                                            </div>
+                                            
+                                            <div class="mb-3">
+                                                <label for="{{ form.explanation.id_for_label }}" class="form-label">Explanation (Optional)</label>
+                                                {{ form.explanation }}
+                                                <div class="form-text">Provide an explanation for why this answer is correct or incorrect</div>
+                                                {% if form.explanation.errors %}
+                                                    <div class="text-danger">{{ form.explanation.errors }}</div>
+                                                {% endif %}
+                                            </div>
+                                        </div>
+                                    </div>
+                                {% endfor %}
+                            </div>
+                            
+                            <div class="d-grid gap-2 d-md-flex justify-content-md-between">
+                                <button type="button" id="add-answer" class="btn btn-success">
+                                    <i class="fas fa-plus-circle me-1"></i> Add Another Answer
+                                </button>
+                                
+                                <div>
+                                    <a href="{% url 'courses:quiz_questions_list' quiz.id %}" class="btn btn-secondary me-md-2">Cancel</a>
+                                    <button type="submit" class="btn btn-primary">Save Answers</button>
+                                </div>
+                            </div>
+                        </form>
+                    {% endif %}
+                </div>
+                <div class="card-footer">
+                    <a href="{% url 'courses:quiz_questions_list' quiz.id %}" class="btn btn-secondary">
+                        <i class="fas fa-arrow-left me-1"></i> Back to Questions
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const addAnswerBtn = document.getElementById('add-answer');
+        if (!addAnswerBtn) return;
+        
+        const totalFormsInput = document.getElementById('id_{{ formset.prefix }}-TOTAL_FORMS');
+        
+        addAnswerBtn.addEventListener('click', function() {
+            // Get the current form count
+            const formCount = parseInt(totalFormsInput.value);
+            
+            // Clone the last form
+            const formsetContainer = document.querySelector('.answer-formset');
+            const lastForm = formsetContainer.querySelector('.answer-form:last-child');
+            const newForm = lastForm.cloneNode(true);
+            
+            // Update form index
+            const formRegex = new RegExp(`{{ formset.prefix }}-\\d+-`, 'g');
+            newForm.innerHTML = newForm.innerHTML.replace(formRegex, `{{ formset.prefix }}-${formCount}-`);
+            
+            // Clear input values
+            newForm.querySelectorAll('input[type="text"], textarea').forEach(input => {
+                input.value = '';
+            });
+            
+            // Uncheck the "is_correct" checkbox
+            const isCorrectCheckbox = newForm.querySelector(`input[name$="-is_correct"]`);
+            if (isCorrectCheckbox) {
+                isCorrectCheckbox.checked = false;
+            }
+            
+            // Remove ID field value
+            const idField = newForm.querySelector(`input[name$="-id"]`);
+            if (idField) {
+                idField.value = '';
+            }
+            
+            // Update header text
+            const header = newForm.querySelector('.card-header h5');
+            if (header) {
+                header.textContent = `Answer ${formCount + 1}`;
+            }
+            
+            // Add the new form to the DOM
+            formsetContainer.appendChild(newForm);
+            
+            // Update the total forms count
+            totalFormsInput.value = formCount + 1;
+        });
+    });
+</script>
+{% endblock %} 

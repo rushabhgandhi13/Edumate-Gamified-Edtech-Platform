@@ -1,0 +1,628 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Study Planner - EduMate{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/fullcalendar@5.10.1/main.min.css">
+<style>
+    .fc-event {
+        cursor: pointer;
+    }
+    .priority-high {
+        border-left: 4px solid #dc3545 !important;
+    }
+    .priority-medium {
+        border-left: 4px solid #ffc107 !important;
+    }
+    .priority-low {
+        border-left: 4px solid #28a745 !important;
+    }
+    .completed {
+        opacity: 0.7;
+        text-decoration: line-through;
+    }
+    .timeline-item {
+        position: relative;
+        padding-left: 40px;
+        margin-bottom: 15px;
+    }
+    .timeline-item:before {
+        content: '';
+        position: absolute;
+        left: 10px;
+        top: 0;
+        bottom: 0;
+        width: 2px;
+        background-color: #e9ecef;
+    }
+    .timeline-item .time-marker {
+        position: absolute;
+        left: 0;
+        top: 0;
+        width: 20px;
+        height: 20px;
+        border-radius: 50%;
+        background-color: #6c757d;
+        text-align: center;
+        line-height: 20px;
+        color: white;
+    }
+    .timeline-item.completed .time-marker {
+        background-color: #28a745;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row">
+        <!-- Sidebar -->
+        <div class="col-md-3 col-lg-2 d-md-block bg-light sidebar collapse">
+            <div class="position-sticky pt-3">
+                <h5 class="sidebar-heading d-flex justify-content-between align-items-center px-3 mt-4 mb-1 text-muted">
+                    <span>Study Planner</span>
+                </h5>
+                <ul class="nav flex-column">
+                    <li class="nav-item">
+                        <a class="nav-link active" href="{% url 'courses:study_planner' %}">
+                            <i class="bi bi-calendar-check"></i> Study Calendar
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="{% url 'courses:my_courses' %}">
+                            <i class="bi bi-book"></i> My Courses
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="{% url 'courses:personalized_recommendations' %}">
+                            <i class="bi bi-lightbulb"></i> Recommendations
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="{% url 'courses:learning_path' %}">
+                            <i class="bi bi-signpost-split"></i> Learning Path
+                        </a>
+                    </li>
+                </ul>
+                
+                <h6 class="sidebar-heading d-flex justify-content-between align-items-center px-3 mt-4 mb-1 text-muted">
+                    <span>Study Statistics</span>
+                </h6>
+                <div class="px-3 py-2">
+                    <div class="mb-3">
+                        <label class="form-label small">Daily Goal Progress</label>
+                        <div class="progress" style="height: 10px;">
+                            <div class="progress-bar bg-success" role="progressbar" style="width: {{ study_statistics.daily_goal_progress }}%;" aria-valuenow="{{ study_statistics.daily_goal_progress }}" aria-valuemin="0" aria-valuemax="100"></div>
+                        </div>
+                        <div class="d-flex justify-content-between small mt-1">
+                            <span>{{ study_statistics.daily_hours|floatformat:1 }} hrs</span>
+                            <span>{{ preferences.daily_goal }} hrs</span>
+                        </div>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label class="form-label small">Weekly Goal Progress</label>
+                        <div class="progress" style="height: 10px;">
+                            <div class="progress-bar bg-primary" role="progressbar" style="width: {{ study_statistics.weekly_goal_progress }}%;" aria-valuenow="{{ study_statistics.weekly_goal_progress }}" aria-valuemin="0" aria-valuemax="100"></div>
+                        </div>
+                        <div class="d-flex justify-content-between small mt-1">
+                            <span>{{ study_statistics.weekly_hours|floatformat:1 }} hrs</span>
+                            <span>{{ preferences.weekly_goal }} hrs</span>
+                        </div>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label class="form-label small">Current Streak</label>
+                        <div class="d-flex align-items-center">
+                            <i class="bi bi-fire text-danger me-2 fs-4"></i>
+                            <span class="fs-5 fw-bold">{{ streak.current_streak }} days</span>
+                        </div>
+                        <div class="small text-muted">Longest: {{ streak.longest_streak }} days</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Main content -->
+        <main class="col-md-9 ms-sm-auto col-lg-10 px-md-4">
+            <div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
+                <h1 class="h2">Study Planner</h1>
+                <div class="btn-toolbar mb-2 mb-md-0">
+                    <div class="btn-group me-2">
+                        <button type="button" class="btn btn-sm btn-outline-secondary" id="add-session-btn">
+                            <i class="bi bi-plus-circle"></i> Add Study Session
+                        </button>
+                        <button type="button" class="btn btn-sm btn-outline-secondary" id="add-deadline-btn">
+                            <i class="bi bi-calendar-plus"></i> Add Deadline
+                        </button>
+                    </div>
+                    <button type="button" class="btn btn-sm btn-outline-primary" id="settings-btn">
+                        <i class="bi bi-gear"></i> Settings
+                    </button>
+                </div>
+            </div>
+            
+            <div class="row mb-4">
+                <div class="col-md-8">
+                    <!-- Calendar -->
+                    <div class="card mb-4">
+                        <div class="card-header">
+                            <h5 class="mb-0">Study Calendar</h5>
+                        </div>
+                        <div class="card-body">
+                            <div id="calendar"></div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="col-md-4">
+                    <!-- Today's Study Plan -->
+                    <div class="card mb-4">
+                        <div class="card-header d-flex justify-content-between align-items-center">
+                            <h5 class="mb-0">Today's Study Plan</h5>
+                            <span class="badge bg-primary">{{ today_sessions|length }} sessions</span>
+                        </div>
+                        <div class="card-body">
+                            {% if today_sessions %}
+                                <div class="timeline">
+                                    {% for session in today_sessions %}
+                                        <div class="timeline-item {% if session.completed %}completed{% endif %}">
+                                            <div class="time-marker">
+                                                <i class="bi bi-check"></i>
+                                            </div>
+                                            <div class="card mb-2">
+                                                <div class="card-body py-2 px-3">
+                                                    <div class="d-flex justify-content-between align-items-center">
+                                                        <h6 class="mb-0">{{ session.title }}</h6>
+                                                        <span class="badge bg-{% if session.priority == 'high' %}danger{% elif session.priority == 'medium' %}warning{% else %}success{% endif %}">
+                                                            {{ session.priority|title }}
+                                                        </span>
+                                                    </div>
+                                                    <div class="small text-muted">
+                                                        {{ session.start_time|time:"g:i A" }} - {{ session.end_time|time:"g:i A" }}
+                                                        {% if session.course %}
+                                                            | {{ session.course.title }}
+                                                        {% endif %}
+                                                    </div>
+                                                    {% if not session.completed %}
+                                                        <div class="mt-2">
+                                                            <button class="btn btn-sm btn-outline-success mark-complete-btn" data-session-id="{{ session.id }}">
+                                                                <i class="bi bi-check-circle"></i> Mark Complete
+                                                            </button>
+                                                        </div>
+                                                    {% endif %}
+                                                </div>
+                                            </div>
+                                        </div>
+                                    {% endfor %}
+                                </div>
+                            {% else %}
+                                <div class="text-center py-4">
+                                    <i class="bi bi-calendar-x fs-1 text-muted"></i>
+                                    <p class="mt-2">No study sessions scheduled for today.</p>
+                                    <button class="btn btn-primary btn-sm" id="add-today-session-btn">
+                                        <i class="bi bi-plus-circle"></i> Add Session for Today
+                                    </button>
+                                </div>
+                            {% endif %}
+                        </div>
+                    </div>
+                    
+                    <!-- Upcoming Deadlines -->
+                    <div class="card mb-4">
+                        <div class="card-header d-flex justify-content-between align-items-center">
+                            <h5 class="mb-0">Upcoming Deadlines</h5>
+                            <button class="btn btn-sm btn-outline-primary" id="add-deadline-btn-small">
+                                <i class="bi bi-plus"></i>
+                            </button>
+                        </div>
+                        <div class="card-body">
+                            {% if upcoming_deadlines %}
+                                <ul class="list-group list-group-flush">
+                                    {% for deadline in upcoming_deadlines %}
+                                        <li class="list-group-item d-flex justify-content-between align-items-center">
+                                            <div>
+                                                <h6 class="mb-0">{{ deadline.title }}</h6>
+                                                <small class="text-muted">
+                                                    {% if deadline.course %}{{ deadline.course.title }} | {% endif %}
+                                                    Due: {{ deadline.due_date|date:"M d, Y" }}
+                                                </small>
+                                            </div>
+                                            <span class="badge bg-{% if deadline.days_left <= 1 %}danger{% elif deadline.days_left <= 3 %}warning{% else %}info{% endif %} rounded-pill">
+                                                {{ deadline.days_left }} day{{ deadline.days_left|pluralize }}
+                                            </span>
+                                        </li>
+                                    {% endfor %}
+                                </ul>
+                            {% else %}
+                                <div class="text-center py-3">
+                                    <p class="text-muted mb-0">No upcoming deadlines.</p>
+                                </div>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Weekly Focus Areas -->
+            <div class="card mb-4">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <h5 class="mb-0">Weekly Focus Areas</h5>
+                    <button class="btn btn-sm btn-outline-primary" id="add-focus-area-btn">
+                        <i class="bi bi-plus"></i> Add Focus Area
+                    </button>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        {% if focus_areas %}
+                            {% for area in focus_areas %}
+                                <div class="col-md-4 mb-3">
+                                    <div class="card h-100">
+                                        <div class="card-body">
+                                            <h5 class="card-title">{{ area.title }}</h5>
+                                            <p class="card-text small">{{ area.description|truncatechars:100 }}</p>
+                                            <div class="progress mb-2" style="height: 10px;">
+                                                <div class="progress-bar bg-success" role="progressbar" style="width: {{ area.progress }}%;" aria-valuenow="{{ area.progress }}" aria-valuemin="0" aria-valuemax="100"></div>
+                                            </div>
+                                            <div class="d-flex justify-content-between small">
+                                                <span>Progress: {{ area.progress }}%</span>
+                                                <span>{{ area.hours_spent|floatformat:1 }} hours spent</span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            {% endfor %}
+                        {% else %}
+                            <div class="col-12">
+                                <div class="text-center py-4">
+                                    <i class="bi bi-bullseye fs-1 text-muted"></i>
+                                    <p class="mt-2">No focus areas defined yet.</p>
+                                    <button class="btn btn-primary btn-sm" id="add-first-focus-area-btn">
+                                        <i class="bi bi-plus-circle"></i> Add Your First Focus Area
+                                    </button>
+                                </div>
+                            </div>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+</div>
+
+<!-- Add Study Session Modal -->
+<div class="modal fade" id="addSessionModal" tabindex="-1" aria-labelledby="addSessionModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="addSessionModalLabel">Add Study Session</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <form id="add-session-form">
+                    <div class="mb-3">
+                        <label for="session-title" class="form-label">Title</label>
+                        <input type="text" class="form-control" id="session-title" required>
+                    </div>
+                    <div class="row mb-3">
+                        <div class="col">
+                            <label for="session-date" class="form-label">Date</label>
+                            <input type="date" class="form-control" id="session-date" required>
+                        </div>
+                        <div class="col">
+                            <label for="session-time" class="form-label">Start Time</label>
+                            <input type="time" class="form-control" id="session-time" required>
+                        </div>
+                    </div>
+                    <div class="mb-3">
+                        <label for="session-duration" class="form-label">Duration (minutes)</label>
+                        <input type="number" class="form-control" id="session-duration" min="5" step="5" value="60" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="session-priority" class="form-label">Priority</label>
+                        <select class="form-select" id="session-priority" required>
+                            <option value="low">Low</option>
+                            <option value="medium" selected>Medium</option>
+                            <option value="high">High</option>
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label for="session-course" class="form-label">Course (optional)</label>
+                        <select class="form-select" id="session-course">
+                            <option value="">Select a course</option>
+                            <!-- Courses would be populated dynamically -->
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label for="session-notes" class="form-label">Notes (optional)</label>
+                        <textarea class="form-control" id="session-notes" rows="3"></textarea>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                <button type="button" class="btn btn-primary" id="save-session-btn">Save Session</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- View Day Modal -->
+<div class="modal fade" id="viewDayModal" tabindex="-1" aria-labelledby="viewDayModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="viewDayModalLabel">Sessions for <span id="day-date"></span></h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <div id="day-sessions-container">
+                    <!-- Sessions will be loaded here -->
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                <button type="button" class="btn btn-primary" id="add-session-for-day-btn">
+                    <i class="bi bi-plus-circle"></i> Add Session
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Settings Modal -->
+<div class="modal fade" id="settingsModal" tabindex="-1" aria-labelledby="settingsModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="settingsModalLabel">Study Planner Settings</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <form id="settings-form">
+                    <div class="mb-3">
+                        <label for="daily-goal" class="form-label">Daily Study Goal (hours)</label>
+                        <input type="number" class="form-control" id="daily-goal" min="0.5" step="0.5" value="{{ preferences.daily_goal }}">
+                    </div>
+                    <div class="mb-3">
+                        <label for="weekly-goal" class="form-label">Weekly Study Goal (hours)</label>
+                        <input type="number" class="form-control" id="weekly-goal" min="1" step="1" value="{{ preferences.weekly_goal }}">
+                    </div>
+                    <div class="mb-3">
+                        <label for="preferred-time" class="form-label">Preferred Study Time</label>
+                        <select class="form-select" id="preferred-time">
+                            <option value="morning" {% if preferences.preferred_time == 'morning' %}selected{% endif %}>Morning (6 AM - 12 PM)</option>
+                            <option value="afternoon" {% if preferences.preferred_time == 'afternoon' %}selected{% endif %}>Afternoon (12 PM - 5 PM)</option>
+                            <option value="evening" {% if preferences.preferred_time == 'evening' %}selected{% endif %}>Evening (5 PM - 10 PM)</option>
+                            <option value="night" {% if preferences.preferred_time == 'night' %}selected{% endif %}>Night (10 PM - 6 AM)</option>
+                            <option value="flexible" {% if preferences.preferred_time == 'flexible' %}selected{% endif %}>Flexible</option>
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label for="session-length" class="form-label">Preferred Session Length</label>
+                        <select class="form-select" id="session-length">
+                            <option value="short" {% if preferences.session_length == 'short' %}selected{% endif %}>Short (15-30 minutes)</option>
+                            <option value="medium" {% if preferences.session_length == 'medium' %}selected{% endif %}>Medium (30-60 minutes)</option>
+                            <option value="long" {% if preferences.session_length == 'long' %}selected{% endif %}>Long (60-90 minutes)</option>
+                            <option value="extended" {% if preferences.session_length == 'extended' %}selected{% endif %}>Extended (90+ minutes)</option>
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Notifications</label>
+                        <div class="form-check">
+                            <input class="form-check-input" type="checkbox" id="email-notifications" {% if preferences.email_notifications %}checked{% endif %}>
+                            <label class="form-check-label" for="email-notifications">
+                                Email Notifications
+                            </label>
+                        </div>
+                        <div class="form-check">
+                            <input class="form-check-input" type="checkbox" id="browser-notifications" {% if preferences.browser_notifications %}checked{% endif %}>
+                            <label class="form-check-label" for="browser-notifications">
+                                Browser Notifications
+                            </label>
+                        </div>
+                        <div class="form-check">
+                            <input class="form-check-input" type="checkbox" id="reminder-notifications" {% if preferences.reminder_notifications %}checked{% endif %}>
+                            <label class="form-check-label" for="reminder-notifications">
+                                Session Reminders
+                            </label>
+                        </div>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                <button type="button" class="btn btn-primary" id="save-settings-btn">Save Settings</button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="https://cdn.jsdelivr.net/npm/fullcalendar@5.10.1/main.min.js"></script>
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Initialize FullCalendar
+        const calendarEl = document.getElementById('calendar');
+        const calendar = new FullCalendar.Calendar(calendarEl, {
+            initialView: 'dayGridMonth',
+            headerToolbar: {
+                left: 'prev,next today',
+                center: 'title',
+                right: 'dayGridMonth,timeGridWeek,timeGridDay'
+            },
+            events: {{ calendar_data|safe }},
+            eventClick: function(info) {
+                // Handle event click
+                console.log('Event clicked:', info.event);
+                // You would typically show a modal with event details and options to edit/delete
+            },
+            dateClick: function(info) {
+                // Handle date click
+                console.log('Date clicked:', info.dateStr);
+                // You would typically show a modal with sessions for that day or option to add a new session
+                document.getElementById('day-date').textContent = new Date(info.dateStr).toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
+                // Load sessions for this day
+                // This would typically be an AJAX call to get sessions for the selected date
+                const modal = new bootstrap.Modal(document.getElementById('viewDayModal'));
+                modal.show();
+            }
+        });
+        calendar.render();
+        
+        // Add Session Button
+        document.getElementById('add-session-btn').addEventListener('click', function() {
+            const modal = new bootstrap.Modal(document.getElementById('addSessionModal'));
+            modal.show();
+        });
+        
+        // Add Today Session Button
+        document.getElementById('add-today-session-btn')?.addEventListener('click', function() {
+            const modal = new bootstrap.Modal(document.getElementById('addSessionModal'));
+            document.getElementById('session-date').valueAsDate = new Date();
+            modal.show();
+        });
+        
+        // Settings Button
+        document.getElementById('settings-btn').addEventListener('click', function() {
+            const modal = new bootstrap.Modal(document.getElementById('settingsModal'));
+            modal.show();
+        });
+        
+        // Save Session Button
+        document.getElementById('save-session-btn').addEventListener('click', function() {
+            const form = document.getElementById('add-session-form');
+            // Validate form
+            if (!form.checkValidity()) {
+                form.reportValidity();
+                return;
+            }
+            
+            // Get form data
+            const title = document.getElementById('session-title').value;
+            const date = document.getElementById('session-date').value;
+            const time = document.getElementById('session-time').value;
+            const duration = document.getElementById('session-duration').value;
+            const priority = document.getElementById('session-priority').value;
+            const course = document.getElementById('session-course').value;
+            const notes = document.getElementById('session-notes').value;
+            
+            // Send AJAX request to save session
+            fetch('{% url "courses:add_study_session" %}', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/x-www-form-urlencoded',
+                    'X-CSRFToken': '{{ csrf_token }}'
+                },
+                body: new URLSearchParams({
+                    'title': title,
+                    'date': date,
+                    'start_time': time,
+                    'duration': duration,
+                    'priority': priority,
+                    'course': course,
+                    'notes': notes
+                })
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    // Close modal
+                    const modal = bootstrap.Modal.getInstance(document.getElementById('addSessionModal'));
+                    modal.hide();
+                    
+                    // Refresh page to show new session
+                    window.location.reload();
+                } else {
+                    alert('Error: ' + data.error);
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                alert('An error occurred while saving the session.');
+            });
+        });
+        
+        // Save Settings Button
+        document.getElementById('save-settings-btn').addEventListener('click', function() {
+            // Get form data
+            const dailyGoal = document.getElementById('daily-goal').value;
+            const weeklyGoal = document.getElementById('weekly-goal').value;
+            const preferredTime = document.getElementById('preferred-time').value;
+            const sessionLength = document.getElementById('session-length').value;
+            const emailNotifications = document.getElementById('email-notifications').checked;
+            const browserNotifications = document.getElementById('browser-notifications').checked;
+            const reminderNotifications = document.getElementById('reminder-notifications').checked;
+            
+            // Send AJAX request to save settings
+            fetch('{% url "courses:update_study_preferences" %}', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/x-www-form-urlencoded',
+                    'X-CSRFToken': '{{ csrf_token }}'
+                },
+                body: new URLSearchParams({
+                    'daily_goal': dailyGoal,
+                    'weekly_goal': weeklyGoal,
+                    'preferred_time': preferredTime,
+                    'session_length': sessionLength,
+                    'email_notifications': emailNotifications,
+                    'browser_notifications': browserNotifications,
+                    'reminder_notifications': reminderNotifications
+                })
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    // Close modal
+                    const modal = bootstrap.Modal.getInstance(document.getElementById('settingsModal'));
+                    modal.hide();
+                    
+                    // Refresh page to show updated settings
+                    window.location.reload();
+                } else {
+                    alert('Error: ' + data.error);
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                alert('An error occurred while saving the settings.');
+            });
+        });
+        
+        // Mark Complete Buttons
+        document.querySelectorAll('.mark-complete-btn').forEach(button => {
+            button.addEventListener('click', function() {
+                const sessionId = this.dataset.sessionId;
+                
+                // Send AJAX request to mark session as complete
+                fetch(`{% url "courses:update_study_session" 0 %}`.replace('0', sessionId), {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/x-www-form-urlencoded',
+                        'X-CSRFToken': '{{ csrf_token }}'
+                    },
+                    body: new URLSearchParams({
+                        'completed': 'true'
+                    })
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        // Refresh page to show updated session
+                        window.location.reload();
+                    } else {
+                        alert('Error: ' + data.error);
+                    }
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                    alert('An error occurred while updating the session.');
+                });
+            });
+        });
+    });
+</script>
+{% endblock %} 

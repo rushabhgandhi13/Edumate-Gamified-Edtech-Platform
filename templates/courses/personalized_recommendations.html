@@ -1,0 +1,311 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Personalized Learning Recommendations{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="row">
+        <div class="col-md-3">
+            <!-- Sidebar -->
+            <div class="card mb-4">
+                <div class="card-header bg-primary text-white">
+                    <h5 class="mb-0">Learning Dashboard</h5>
+                </div>
+                <div class="list-group list-group-flush">
+                    <a href="{% url 'accounts:dashboard' %}" class="list-group-item list-group-item-action">
+                        <i class="fas fa-tachometer-alt me-2"></i> Main Dashboard
+                    </a>
+                    <a href="{% url 'courses:my_courses' %}" class="list-group-item list-group-item-action">
+                        <i class="fas fa-book me-2"></i> My Courses
+                    </a>
+                    <a href="#" class="list-group-item list-group-item-action active">
+                        <i class="fas fa-lightbulb me-2"></i> Recommendations
+                    </a>
+                    <a href="{% url 'courses:learning_path' %}" class="list-group-item list-group-item-action">
+                        <i class="fas fa-road me-2"></i> Learning Path
+                    </a>
+                    <a href="{% url 'courses:study_planner' %}" class="list-group-item list-group-item-action">
+                        <i class="fas fa-calendar-alt me-2"></i> Study Planner
+                    </a>
+                </div>
+            </div>
+            
+            <!-- Learning Stats -->
+            <div class="card mb-4">
+                <div class="card-header bg-info text-white">
+                    <h5 class="mb-0">Learning Stats</h5>
+                </div>
+                <div class="card-body">
+                    <div class="mb-3">
+                        <h6>Weekly Study Time</h6>
+                        <div class="progress" style="height: 20px;">
+                            <div class="progress-bar bg-success" role="progressbar" style="width: {{ weekly_progress }}%;" aria-valuenow="{{ weekly_progress }}" aria-valuemin="0" aria-valuemax="100">{{ weekly_hours }} hrs</div>
+                        </div>
+                        <small class="text-muted">Goal: {{ weekly_goal }} hours</small>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <h6>Learning Streak</h6>
+                        <div class="d-flex align-items-center">
+                            <div class="me-2">
+                                <i class="fas fa-fire text-danger"></i>
+                            </div>
+                            <div>
+                                <h4 class="mb-0">{{ streak_days }} days</h4>
+                                <small class="text-muted">Keep it up!</small>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div>
+                        <h6>Focus Areas</h6>
+                        <div class="d-flex flex-wrap">
+                            {% for area in focus_areas %}
+                                <span class="badge bg-primary me-1 mb-1">{{ area }}</span>
+                            {% endfor %}
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-md-9">
+            <!-- Main Content -->
+            <div class="card mb-4">
+                <div class="card-header bg-primary text-white d-flex justify-content-between align-items-center">
+                    <h4 class="mb-0">Personalized Learning Recommendations</h4>
+                    <button class="btn btn-light btn-sm" id="refresh-recommendations">
+                        <i class="fas fa-sync-alt me-1"></i> Refresh
+                    </button>
+                </div>
+                <div class="card-body">
+                    <div class="alert alert-info">
+                        <i class="fas fa-robot me-2"></i>
+                        <strong>AI-Powered:</strong> These recommendations are personalized based on your learning patterns, strengths, and areas for improvement.
+                    </div>
+                    
+                    <!-- Learning Path Progress -->
+                    <div class="mb-4">
+                        <h5>Your Learning Journey</h5>
+                        <div class="progress mb-3" style="height: 25px;">
+                            <div class="progress-bar bg-success" role="progressbar" style="width: {{ overall_progress }}%;" aria-valuenow="{{ overall_progress }}" aria-valuemin="0" aria-valuemax="100">{{ overall_progress }}% Complete</div>
+                        </div>
+                        
+                        <div class="d-flex justify-content-between text-muted small">
+                            <span>Beginner</span>
+                            <span>Intermediate</span>
+                            <span>Advanced</span>
+                        </div>
+                    </div>
+                    
+                    <!-- Next Steps -->
+                    <div class="card mb-4">
+                        <div class="card-header bg-success text-white">
+                            <h5 class="mb-0">Recommended Next Steps</h5>
+                        </div>
+                        <div class="card-body">
+                            <div class="list-group">
+                                {% for step in next_steps %}
+                                    <a href="{{ step.url }}" class="list-group-item list-group-item-action">
+                                        <div class="d-flex w-100 justify-content-between">
+                                            <h6 class="mb-1">{{ step.title }}</h6>
+                                            <small>{{ step.time_estimate }} min</small>
+                                        </div>
+                                        <p class="mb-1">{{ step.description }}</p>
+                                        <small>
+                                            <i class="fas fa-tag me-1"></i> {{ step.type }}
+                                            {% if step.priority == 'high' %}
+                                                <span class="badge bg-danger ms-2">High Priority</span>
+                                            {% elif step.priority == 'medium' %}
+                                                <span class="badge bg-warning text-dark ms-2">Medium Priority</span>
+                                            {% endif %}
+                                        </small>
+                                    </a>
+                                {% endfor %}
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Skill Gaps -->
+                    <div class="card mb-4">
+                        <div class="card-header bg-warning text-dark">
+                            <h5 class="mb-0">Skill Gaps to Address</h5>
+                        </div>
+                        <div class="card-body">
+                            <div class="row">
+                                {% for skill in skill_gaps %}
+                                    <div class="col-md-6 mb-3">
+                                        <div class="card h-100">
+                                            <div class="card-body">
+                                                <h6 class="card-title">{{ skill.name }}</h6>
+                                                <div class="progress mb-2" style="height: 10px;">
+                                                    <div class="progress-bar bg-info" role="progressbar" style="width: {{ skill.current_level }}%;" aria-valuenow="{{ skill.current_level }}" aria-valuemin="0" aria-valuemax="100"></div>
+                                                </div>
+                                                <p class="card-text small">{{ skill.description }}</p>
+                                                <a href="{{ skill.resource_url }}" class="btn btn-sm btn-outline-primary">
+                                                    <i class="fas fa-graduation-cap me-1"></i> Improve this skill
+                                                </a>
+                                            </div>
+                                        </div>
+                                    </div>
+                                {% endfor %}
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Course Recommendations -->
+                    <div class="card mb-4">
+                        <div class="card-header bg-info text-white">
+                            <h5 class="mb-0">Recommended Courses</h5>
+                        </div>
+                        <div class="card-body">
+                            <div class="row">
+                                {% for course in recommended_courses %}
+                                    <div class="col-md-4 mb-3">
+                                        <div class="card h-100">
+                                            {% if course.image %}
+                                                <img src="{{ course.image.url }}" class="card-img-top" alt="{{ course.title }}">
+                                            {% else %}
+                                                <div class="bg-light text-center py-4">
+                                                    <i class="fas fa-book fa-3x text-muted"></i>
+                                                </div>
+                                            {% endif %}
+                                            <div class="card-body">
+                                                <h6 class="card-title">{{ course.title }}</h6>
+                                                <p class="card-text small">{{ course.description|truncatechars:80 }}</p>
+                                                <div class="d-flex justify-content-between align-items-center">
+                                                    <span class="badge bg-primary">{{ course.category }}</span>
+                                                    <small class="text-muted">{{ course.duration }}</small>
+                                                </div>
+                                            </div>
+                                            <div class="card-footer bg-white">
+                                                <a href="{{ course.url }}" class="btn btn-sm btn-primary w-100">View Course</a>
+                                            </div>
+                                        </div>
+                                    </div>
+                                {% endfor %}
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Learning Resources -->
+                    <div class="card">
+                        <div class="card-header bg-secondary text-white">
+                            <h5 class="mb-0">Additional Learning Resources</h5>
+                        </div>
+                        <div class="card-body">
+                            <ul class="list-group">
+                                {% for resource in additional_resources %}
+                                    <li class="list-group-item d-flex justify-content-between align-items-center">
+                                        <div>
+                                            <h6 class="mb-1">{{ resource.title }}</h6>
+                                            <p class="mb-1 small">{{ resource.description }}</p>
+                                            <small>
+                                                <i class="fas fa-{{ resource.icon }} me-1"></i> {{ resource.type }}
+                                            </small>
+                                        </div>
+                                        <a href="{{ resource.url }}" class="btn btn-sm btn-outline-primary">
+                                            <i class="fas fa-external-link-alt me-1"></i> Open
+                                        </a>
+                                    </li>
+                                {% endfor %}
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- AI Explanation Modal -->
+<div class="modal fade" id="aiExplanationModal" tabindex="-1" aria-labelledby="aiExplanationModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header bg-primary text-white">
+                <h5 class="modal-title" id="aiExplanationModalLabel">How We Generate Your Recommendations</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <div class="mb-4">
+                    <h6><i class="fas fa-brain me-2"></i>Our AI Learning System</h6>
+                    <p>
+                        Our AI-powered recommendation system analyzes your learning patterns, quiz results, time spent on different topics,
+                        and interaction with course materials to create a personalized learning experience.
+                    </p>
+                </div>
+                
+                <div class="mb-4">
+                    <h6><i class="fas fa-chart-line me-2"></i>Data We Analyze</h6>
+                    <ul>
+                        <li><strong>Performance data:</strong> Quiz scores, assignment completion, and practice exercises</li>
+                        <li><strong>Engagement metrics:</strong> Time spent on different topics, revisited content</li>
+                        <li><strong>Learning preferences:</strong> Content types you engage with most (videos, reading, interactive)</li>
+                        <li><strong>Pace and patterns:</strong> Your learning speed and optimal study times</li>
+                    </ul>
+                </div>
+                
+                <div class="mb-4">
+                    <h6><i class="fas fa-cogs me-2"></i>How Recommendations Are Generated</h6>
+                    <ol>
+                        <li>We identify knowledge gaps based on quiz performance</li>
+                        <li>We analyze your learning style and preferences</li>
+                        <li>We compare your progress with successful learning paths</li>
+                        <li>We prioritize content based on your goals and current needs</li>
+                        <li>We continuously adapt as you learn and progress</li>
+                    </ol>
+                </div>
+                
+                <div class="alert alert-info">
+                    <i class="fas fa-lightbulb me-2"></i>
+                    <strong>Tip:</strong> The more you interact with the platform, the more personalized your recommendations become!
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                <button type="button" class="btn btn-primary" id="refresh-ai-recommendations">Refresh My Recommendations</button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Refresh recommendations button
+        document.getElementById('refresh-recommendations').addEventListener('click', function() {
+            this.innerHTML = '<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> Refreshing...';
+            this.disabled = true;
+            
+            // Simulate API call with timeout
+            setTimeout(() => {
+                window.location.reload();
+            }, 1500);
+        });
+        
+        // Add info button to header
+        const header = document.querySelector('.card-header.bg-primary');
+        const infoButton = document.createElement('button');
+        infoButton.className = 'btn btn-light btn-sm ms-2';
+        infoButton.innerHTML = '<i class="fas fa-info-circle"></i>';
+        infoButton.setAttribute('data-bs-toggle', 'modal');
+        infoButton.setAttribute('data-bs-target', '#aiExplanationModal');
+        header.querySelector('div').appendChild(infoButton);
+        
+        // Refresh AI recommendations button in modal
+        document.getElementById('refresh-ai-recommendations').addEventListener('click', function() {
+            this.innerHTML = '<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> Refreshing...';
+            this.disabled = true;
+            
+            // Simulate API call with timeout
+            setTimeout(() => {
+                window.location.reload();
+                const modal = bootstrap.Modal.getInstance(document.getElementById('aiExplanationModal'));
+                modal.hide();
+            }, 1500);
+        });
+    });
+</script>
+{% endblock %} 

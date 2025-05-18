@@ -1,0 +1,106 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}{{ quiz.title }} - {{ course.title }}{% endblock %}
+
+{% block content %}
+<div class="container py-4">
+    <nav aria-label="breadcrumb">
+        <ol class="breadcrumb">
+            <li class="breadcrumb-item"><a href="{% url 'courses:course_list' %}">Courses</a></li>
+            <li class="breadcrumb-item"><a href="{% url 'courses:course_detail' slug=course.slug %}">{{ course.title }}</a></li>
+            <li class="breadcrumb-item active" aria-current="page">{{ quiz.title }}</li>
+        </ol>
+    </nav>
+
+    <div class="row">
+        <div class="col-md-8">
+            <div class="card mb-4">
+                <div class="card-header bg-primary text-white">
+                    <h4 class="card-title mb-0">{{ quiz.title }}</h4>
+                </div>
+                <div class="card-body">
+                    <div class="quiz-info mb-4">
+                        <p class="lead">{{ quiz.description }}</p>
+                        <div class="row">
+                            <div class="col-md-4">
+                                <p><i class="bi bi-clock"></i> Time Limit: {{ quiz.time_limit }} minutes</p>
+                            </div>
+                            <div class="col-md-4">
+                                <p><i class="bi bi-trophy"></i> Passing Score: {{ quiz.passing_score }}%</p>
+                            </div>
+                            <div class="col-md-4">
+                                <p><i class="bi bi-question-circle"></i> Questions: {{ questions|length }}</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    {% if is_completed %}
+                        <div class="alert alert-success">
+                            <i class="bi bi-check-circle"></i> You have already completed this quiz.
+                        </div>
+                    {% endif %}
+
+                    {% if previous_attempts %}
+                        <div class="previous-attempts mb-4">
+                            <h5>Previous Attempts</h5>
+                            <div class="table-responsive">
+                                <table class="table table-bordered">
+                                    <thead>
+                                        <tr>
+                                            <th>Date</th>
+                                            <th>Score</th>
+                                            <th>Result</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        {% for attempt in previous_attempts %}
+                                        <tr>
+                                            <td>{{ attempt.started_at|date:"M d, Y H:i" }}</td>
+                                            <td>{{ attempt.score_percentage|floatformat:1 }}%</td>
+                                            <td>
+                                                {% if attempt.passed %}
+                                                    <span class="badge bg-success">Passed</span>
+                                                {% else %}
+                                                    <span class="badge bg-danger">Failed</span>
+                                                {% endif %}
+                                            </td>
+                                        </tr>
+                                        {% endfor %}
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    {% endif %}
+
+                    <div class="quiz-actions">
+                        {% if not is_completed %}
+                            <a href="{% url 'courses:take_quiz' quiz_id=quiz.id %}" class="btn btn-primary">
+                                {% if previous_attempts %}Retake Quiz{% else %}Start Quiz{% endif %}
+                            </a>
+                        {% endif %}
+                        <a href="{% url 'courses:course_detail' slug=course.slug %}" class="btn btn-outline-secondary">Back to Course</a>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-4">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0">Quiz Guidelines</h5>
+                </div>
+                <div class="card-body">
+                    <ul class="list-unstyled">
+                        <li class="mb-2"><i class="bi bi-check2-circle text-success"></i> Read each question carefully</li>
+                        <li class="mb-2"><i class="bi bi-check2-circle text-success"></i> You can attempt the quiz multiple times</li>
+                        <li class="mb-2"><i class="bi bi-check2-circle text-success"></i> Your highest score will be recorded</li>
+                        <li class="mb-2"><i class="bi bi-check2-circle text-success"></i> Time limit applies to each attempt</li>
+                        <li class="mb-2"><i class="bi bi-check2-circle text-success"></i> Results shown immediately after submission</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %} 

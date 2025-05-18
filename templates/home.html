@@ -1,0 +1,164 @@
+{% extends 'base.html' %}
+
+{% block title %}EduMate - Learn, Play, Achieve!{% endblock %}
+
+{% block content %}
+<div class="container mt-5">
+    <div class="row align-items-center">
+        <div class="col-lg-6">
+            <h1 class="display-4 fw-bold">Welcome to EduMate</h1>
+            <p class="lead">A gamified learning platform that makes education fun and engaging.</p>
+            <p class="mb-4">EduMate combines AI-powered personalization with game mechanics to create an interactive and motivating educational experience.</p>
+            <div class="d-grid gap-2 d-md-flex">
+                <a href="{% url 'accounts:login' %}" class="btn btn-primary btn-lg px-4 me-md-2">Get Started</a>
+                <a href="#features" class="btn btn-outline-secondary btn-lg px-4">Learn More</a>
+            </div>
+        </div>
+        <div class="col-lg-6">
+            <img src="https://via.placeholder.com/600x400?text=EduMate" alt="EduMate" class="img-fluid rounded shadow-lg">
+        </div>
+    </div>
+</div>
+
+<div class="container my-5" id="features">
+    <h2 class="text-center mb-5">Key Features</h2>
+    <div class="row g-4">
+        <div class="col-md-4">
+            <div class="card h-100">
+                <div class="card-body text-center">
+                    <i class="fas fa-robot fa-3x text-primary mb-3"></i>
+                    <h3 class="card-title">AI-Powered Personalization</h3>
+                    <p class="card-text">Our platform adapts to your learning style and pace, providing personalized content and recommendations.</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="card h-100">
+                <div class="card-body text-center">
+                    <i class="fas fa-trophy fa-3x text-primary mb-3"></i>
+                    <h3 class="card-title">Gamified Learning</h3>
+                    <p class="card-text">Earn points, badges, and climb the leaderboard as you complete courses and challenges.</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="card h-100">
+                <div class="card-body text-center">
+                    <i class="fas fa-chart-line fa-3x text-primary mb-3"></i>
+                    <h3 class="card-title">Learning Analytics</h3>
+                    <p class="card-text">Track your progress and get insights into your learning patterns and areas for improvement.</p>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="bg-light py-5">
+    <div class="container">
+        <div class="row align-items-center">
+            <div class="col-lg-6">
+                <h2>Why Choose EduMate?</h2>
+                <ul class="list-group list-group-flush bg-transparent">
+                    <li class="list-group-item bg-transparent"><i class="fas fa-check-circle text-success me-2"></i> Interactive and engaging learning experience</li>
+                    <li class="list-group-item bg-transparent"><i class="fas fa-check-circle text-success me-2"></i> Personalized content tailored to your needs</li>
+                    <li class="list-group-item bg-transparent"><i class="fas fa-check-circle text-success me-2"></i> Real-time feedback and progress tracking</li>
+                    <li class="list-group-item bg-transparent"><i class="fas fa-check-circle text-success me-2"></i> Competitive elements to boost motivation</li>
+                    <li class="list-group-item bg-transparent"><i class="fas fa-check-circle text-success me-2"></i> Community support and collaborative learning</li>
+                </ul>
+            </div>
+            <div class="col-lg-6">
+                <img src="https://via.placeholder.com/600x400?text=Why+EduMate" alt="Why EduMate" class="img-fluid rounded shadow">
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="container my-5">
+    <h2 class="text-center mb-5">Join Thousands of Satisfied Learners</h2>
+    <div class="row">
+        <div class="col-md-4 mb-4">
+            <div class="card h-100">
+                <div class="card-body">
+                    <div class="d-flex mb-3">
+                        <div class="text-warning">
+                            <i class="fas fa-star"></i>
+                            <i class="fas fa-star"></i>
+                            <i class="fas fa-star"></i>
+                            <i class="fas fa-star"></i>
+                            <i class="fas fa-star"></i>
+                        </div>
+                    </div>
+                    <p class="card-text">"EduMate transformed my learning experience. The gamification elements kept me motivated, and I completed courses I had been putting off for months!"</p>
+                    <div class="d-flex align-items-center">
+                        <div class="flex-shrink-0">
+                            <img src="https://via.placeholder.com/50" alt="User" class="rounded-circle">
+                        </div>
+                        <div class="flex-grow-1 ms-3">
+                            <h6 class="mb-0">Sarah Johnson</h6>
+                            <small class="text-muted">Computer Science Student</small>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4 mb-4">
+            <div class="card h-100">
+                <div class="card-body">
+                    <div class="d-flex mb-3">
+                        <div class="text-warning">
+                            <i class="fas fa-star"></i>
+                            <i class="fas fa-star"></i>
+                            <i class="fas fa-star"></i>
+                            <i class="fas fa-star"></i>
+                            <i class="fas fa-star"></i>
+                        </div>
+                    </div>
+                    <p class="card-text">"As a corporate trainer, I've seen a significant improvement in engagement and completion rates since we started using EduMate for our training programs."</p>
+                    <div class="d-flex align-items-center">
+                        <div class="flex-shrink-0">
+                            <img src="https://via.placeholder.com/50" alt="User" class="rounded-circle">
+                        </div>
+                        <div class="flex-grow-1 ms-3">
+                            <h6 class="mb-0">Michael Chen</h6>
+                            <small class="text-muted">Corporate Trainer</small>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4 mb-4">
+            <div class="card h-100">
+                <div class="card-body">
+                    <div class="d-flex mb-3">
+                        <div class="text-warning">
+                            <i class="fas fa-star"></i>
+                            <i class="fas fa-star"></i>
+                            <i class="fas fa-star"></i>
+                            <i class="fas fa-star"></i>
+                            <i class="fas fa-star-half-alt"></i>
+                        </div>
+                    </div>
+                    <p class="card-text">"The personalized learning path and adaptive content have helped me master difficult concepts that I struggled with for years. Highly recommended!"</p>
+                    <div class="d-flex align-items-center">
+                        <div class="flex-shrink-0">
+                            <img src="https://via.placeholder.com/50" alt="User" class="rounded-circle">
+                        </div>
+                        <div class="flex-grow-1 ms-3">
+                            <h6 class="mb-0">Emily Rodriguez</h6>
+                            <small class="text-muted">Self-taught Developer</small>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="bg-primary text-white py-5">
+    <div class="container text-center">
+        <h2 class="mb-4">Ready to Transform Your Learning Experience?</h2>
+        <p class="lead mb-4">Join EduMate today and start your journey towards more engaging and effective learning.</p>
+        <a href="{% url 'accounts:login' %}" class="btn btn-light btn-lg px-4">Get Started Now</a>
+    </div>
+</div>
+{% endblock %} 

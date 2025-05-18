@@ -1,0 +1,145 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}{{ lesson.title }} - {{ course.title }}{% endblock %}
+
+{% block content %}
+<div class="container py-4">
+    <nav aria-label="breadcrumb">
+        <ol class="breadcrumb">
+            <li class="breadcrumb-item"><a href="{% url 'courses:course_list' %}">Courses</a></li>
+            <li class="breadcrumb-item"><a href="{% url 'courses:course_detail' slug=course.slug %}">{{ course.title }}</a></li>
+            <li class="breadcrumb-item active" aria-current="page">{{ lesson.title }}</li>
+        </ol>
+    </nav>
+
+    <div class="row">
+        <div class="col-md-8">
+            <div class="card mb-4">
+                <div class="card-header bg-primary text-white d-flex justify-content-between align-items-center">
+                    <h4 class="card-title mb-0">{{ lesson.title }}</h4>
+                    {% if is_completed %}
+                        <span class="badge bg-success"><i class="bi bi-check-circle"></i> Completed</span>
+                    {% endif %}
+                </div>
+                <div class="card-body">
+                    {% if lesson.content %}
+                        <div class="lesson-content mb-4">
+                            {{ lesson.content|safe }}
+                        </div>
+                    {% else %}
+                        <div class="alert alert-warning">
+                            <i class="bi bi-exclamation-triangle"></i> This lesson's content is currently being prepared.
+                        </div>
+                    {% endif %}
+
+                    {% if debug_info %}
+                        <div class="alert alert-info mt-4">
+                            <h5>Debug Information</h5>
+                            <ul>
+                                <li>Course: {{ debug_info.course_title }}</li>
+                                <li>Module: {{ debug_info.module_title }}</li>
+                                <li>Lesson: {{ debug_info.lesson_title }}</li>
+                                <li>Content Length: {{ debug_info.content_length }} characters</li>
+                            </ul>
+                        </div>
+                    {% endif %}
+
+                    <div class="lesson-actions mt-4">
+                        <form method="post" class="d-inline">
+                            {% csrf_token %}
+                            {% if not is_completed %}
+                                <button type="submit" name="mark_completed" class="btn btn-success">
+                                    <i class="bi bi-check-circle"></i> Mark as Completed
+                                </button>
+                            {% endif %}
+                        </form>
+                        <a href="{% url 'courses:course_detail' slug=course.slug %}" class="btn btn-outline-secondary">
+                            Back to Course
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-4">
+            <!-- Module Progress -->
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h5 class="mb-0">Module Progress</h5>
+                </div>
+                <div class="card-body">
+                    <div class="progress mb-3">
+                        {% with completed_count=progress.completed_lessons.count %}
+                        {% with total_count=progress.module.lessons.count %}
+                        <div class="progress-bar bg-success" role="progressbar" 
+                             style="width: {% widthratio completed_count total_count 100 %}%"
+                             aria-valuenow="{% widthratio completed_count total_count 100 %}"
+                             aria-valuemin="0" aria-valuemax="100">
+                            {{ completed_count }}/{{ total_count }} Lessons
+                        </div>
+                        {% endwith %}
+                        {% endwith %}
+                    </div>
+                </div>
+            </div>
+
+            <!-- Module Navigation -->
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0">Module Contents</h5>
+                </div>
+                <div class="card-body p-0">
+                    <div class="list-group list-group-flush">
+                        {% for module_lesson in progress.module.lessons.all %}
+                        <a href="{% url 'courses:lesson_detail' course_slug=course.slug lesson_id=module_lesson.id %}" 
+                           class="list-group-item list-group-item-action d-flex justify-content-between align-items-center
+                                  {% if module_lesson.id == lesson.id %}active{% endif %}">
+                            {{ module_lesson.title }}
+                            {% if module_lesson in progress.completed_lessons.all %}
+                                <i class="bi bi-check-circle-fill text-success"></i>
+                            {% endif %}
+                        </a>
+                        {% endfor %}
+
+                        {% for quiz in progress.module.quizzes.all %}
+                        <a href="{% url 'courses:quiz_detail' course_slug=course.slug quiz_id=quiz.id %}" 
+                           class="list-group-item list-group-item-action d-flex justify-content-between align-items-center">
+                            {{ quiz.title }}
+                            {% if quiz in progress.completed_quizzes.all %}
+                                <i class="bi bi-check-circle-fill text-success"></i>
+                            {% endif %}
+                        </a>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_css %}
+<style>
+    .lesson-content {
+        font-size: 1.1rem;
+        line-height: 1.6;
+    }
+    .lesson-content img {
+        max-width: 100%;
+        height: auto;
+        margin: 1rem 0;
+    }
+    .lesson-content pre {
+        background-color: #f8f9fa;
+        padding: 1rem;
+        border-radius: 0.25rem;
+        margin: 1rem 0;
+    }
+    .lesson-content code {
+        background-color: #f8f9fa;
+        padding: 0.2rem 0.4rem;
+        border-radius: 0.25rem;
+    }
+</style>
+{% endblock %} 

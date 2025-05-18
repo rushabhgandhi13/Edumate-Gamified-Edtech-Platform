@@ -1,0 +1,202 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Learning Insights{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'css/analytics.css' %}">
+{% endblock %}
+
+{% block content %}
+<div class="container my-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h1>Learning Insights</h1>
+        <a href="{% url 'generate_insight' %}" class="btn btn-primary">Generate New Insight</a>
+    </div>
+    
+    {% if messages %}
+        {% for message in messages %}
+            <div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert">
+                {{ message }}
+                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+            </div>
+        {% endfor %}
+    {% endif %}
+    
+    <div class="row mb-4">
+        <div class="col-lg-3">
+            <div class="card shadow-sm mb-4">
+                <div class="card-header">
+                    <h5 class="mb-0">Filter Insights</h5>
+                </div>
+                <div class="card-body">
+                    <form method="get" action="{% url 'learning_insights' %}">
+                        <div class="mb-3">
+                            <label class="form-label">Insight Type</label>
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox" name="type" value="all" id="type-all" 
+                                       {% if 'all' in selected_types or not selected_types %}checked{% endif %}>
+                                <label class="form-check-label" for="type-all">All Types</label>
+                            </div>
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox" name="type" value="performance" id="type-performance"
+                                       {% if 'performance' in selected_types %}checked{% endif %}>
+                                <label class="form-check-label" for="type-performance">Performance</label>
+                            </div>
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox" name="type" value="study_habits" id="type-study"
+                                       {% if 'study_habits' in selected_types %}checked{% endif %}>
+                                <label class="form-check-label" for="type-study">Study Habits</label>
+                            </div>
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox" name="type" value="content_suggestion" id="type-content"
+                                       {% if 'content_suggestion' in selected_types %}checked{% endif %}>
+                                <label class="form-check-label" for="type-content">Content Suggestions</label>
+                            </div>
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox" name="type" value="knowledge_gap" id="type-knowledge"
+                                       {% if 'knowledge_gap' in selected_types %}checked{% endif %}>
+                                <label class="form-check-label" for="type-knowledge">Knowledge Gaps</label>
+                            </div>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label class="form-label">Read Status</label>
+                            <select class="form-select" name="read">
+                                <option value="all" {% if read_status == 'all' %}selected{% endif %}>All</option>
+                                <option value="unread" {% if read_status == 'unread' %}selected{% endif %}>Unread Only</option>
+                                <option value="read" {% if read_status == 'read' %}selected{% endif %}>Read Only</option>
+                            </select>
+                        </div>
+                        
+                        <button type="submit" class="btn btn-primary">Apply Filters</button>
+                    </form>
+                </div>
+            </div>
+            
+            <div class="card shadow-sm">
+                <div class="card-header">
+                    <h5 class="mb-0">Insight Stats</h5>
+                </div>
+                <div class="card-body">
+                    <div class="d-flex justify-content-between mb-2">
+                        <span>Total Insights:</span>
+                        <span class="fw-bold">{{ insight_stats.total }}</span>
+                    </div>
+                    <div class="d-flex justify-content-between mb-2">
+                        <span>Unread Insights:</span>
+                        <span class="fw-bold">{{ insight_stats.unread }}</span>
+                    </div>
+                    <hr>
+                    <h6 class="mb-2">By Type</h6>
+                    {% for type, count in insight_stats.by_type.items %}
+                        <div class="d-flex justify-content-between mb-1">
+                            <span>{{ type|title }}:</span>
+                            <span>{{ count }}</span>
+                        </div>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-lg-9">
+            <div class="card shadow-sm">
+                <div class="card-header d-flex justify-content-between">
+                    <h5 class="mb-0">Your Insights</h5>
+                    {% if insights %}
+                        <span class="badge bg-primary">{{ insights|length }} result{{ insights|length|pluralize }}</span>
+                    {% endif %}
+                </div>
+                <div class="card-body">
+                    {% if insights %}
+                        <div class="insights-container">
+                            {% for insight in insights %}
+                                <div class="card mb-3 {% if not insight.read %}border-primary{% endif %}">
+                                    <div class="card-header d-flex justify-content-between align-items-center {% if not insight.read %}bg-light{% endif %}">
+                                        <h5 class="mb-0">{{ insight.title }}</h5>
+                                        <div>
+                                            <span class="badge bg-secondary">{{ insight.get_insight_type_display }}</span>
+                                            {% if not insight.read %}
+                                                <span class="badge bg-primary">New</span>
+                                            {% endif %}
+                                        </div>
+                                    </div>
+                                    <div class="card-body">
+                                        <p class="card-text">{{ insight.description }}</p>
+                                        <div class="d-flex justify-content-between">
+                                            <small class="text-muted">Generated on {{ insight.created_at|date:"F d, Y" }}</small>
+                                            <form method="post" action="{% url 'mark_insight_read' insight.id %}" class="d-inline">
+                                                {% csrf_token %}
+                                                {% if insight.read %}
+                                                    <input type="hidden" name="mark_as" value="unread">
+                                                    <button type="submit" class="btn btn-sm btn-outline-secondary">Mark as Unread</button>
+                                                {% else %}
+                                                    <input type="hidden" name="mark_as" value="read">
+                                                    <button type="submit" class="btn btn-sm btn-primary">Mark as Read</button>
+                                                {% endif %}
+                                            </form>
+                                        </div>
+                                    </div>
+                                </div>
+                            {% endfor %}
+                        </div>
+                    {% else %}
+                        <div class="text-center py-5">
+                            <div class="mb-3">
+                                <img src="{% static 'images/empty-insights.svg' %}" alt="No insights" class="img-fluid" style="max-height: 200px;">
+                            </div>
+                            <h4>No insights found</h4>
+                            <p class="text-muted">We don't have any insights matching your filters yet.</p>
+                            <a href="{% url 'generate_insight' %}" class="btn btn-primary mt-2">Generate New Insight</a>
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const typeAllCheckbox = document.getElementById('type-all');
+    const typeCheckboxes = document.querySelectorAll('input[name="type"]:not(#type-all)');
+    
+    typeAllCheckbox.addEventListener('change', function() {
+        if (this.checked) {
+            typeCheckboxes.forEach(checkbox => {
+                checkbox.checked = false;
+                checkbox.disabled = true;
+            });
+        } else {
+            typeCheckboxes.forEach(checkbox => {
+                checkbox.disabled = false;
+            });
+        }
+    });
+    
+    typeCheckboxes.forEach(checkbox => {
+        checkbox.addEventListener('change', function() {
+            if (this.checked) {
+                typeAllCheckbox.checked = false;
+            }
+            
+            const anyTypeChecked = Array.from(typeCheckboxes).some(cb => cb.checked);
+            if (!anyTypeChecked) {
+                typeAllCheckbox.checked = true;
+                typeCheckboxes.forEach(cb => {
+                    cb.disabled = true;
+                });
+            }
+        });
+    });
+    
+    if (typeAllCheckbox.checked) {
+        typeCheckboxes.forEach(checkbox => {
+            checkbox.disabled = true;
+        });
+    }
+});
+</script>
+{% endblock %} 

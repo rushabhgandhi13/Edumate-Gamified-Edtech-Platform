@@ -1,0 +1,166 @@
+{% extends 'base.html' %}
+
+{% block title %}{{ module.title }} - {{ course.title }}{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="row">
+        <div class="col-lg-8">
+            <nav aria-label="breadcrumb">
+                <ol class="breadcrumb">
+                    <li class="breadcrumb-item"><a href="{% url 'courses:course_list' %}">Courses</a></li>
+                    <li class="breadcrumb-item"><a href="{% url 'courses:course_detail' course.slug %}">{{ course.title }}</a></li>
+                    <li class="breadcrumb-item"><a href="{% url 'courses:module_list' course.slug %}">Modules</a></li>
+                    <li class="breadcrumb-item active" aria-current="page">{{ module.title }}</li>
+                </ol>
+            </nav>
+            
+            <h1 class="mb-3">{{ module.title }}</h1>
+            <p class="lead">{{ module.description }}</p>
+            
+            <div class="card mb-4">
+                <div class="card-header bg-primary text-white">
+                    <h4 class="card-title mb-0">Lessons</h4>
+                </div>
+                <div class="card-body">
+                    {% if lessons %}
+                        <div class="list-group">
+                            {% for lesson in lessons %}
+                                <a href="#" class="list-group-item list-group-item-action">
+                                    <div class="d-flex w-100 justify-content-between">
+                                        <h5 class="mb-1">{{ lesson.title }}</h5>
+                                        {% if lesson in progress.completed_lessons.all %}
+                                            <span class="badge bg-success">Completed</span>
+                                        {% endif %}
+                                    </div>
+                                    <p class="mb-1 text-truncate">{{ lesson.content|striptags|truncatechars:100 }}</p>
+                                </a>
+                            {% endfor %}
+                        </div>
+                    {% else %}
+                        <div class="alert alert-info">
+                            <i class="fas fa-info-circle"></i> No lessons available for this module.
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+            
+            <div class="card mb-4">
+                <div class="card-header bg-info text-white">
+                    <h4 class="card-title mb-0">Quizzes</h4>
+                </div>
+                <div class="card-body">
+                    {% if quizzes %}
+                        <div class="list-group">
+                            {% for quiz in quizzes %}
+                                <div class="list-group-item">
+                                    <div class="d-flex w-100 justify-content-between">
+                                        <h5 class="mb-1">{{ quiz.title }}</h5>
+                                        {% if quiz in progress.completed_quizzes.all %}
+                                            <span class="badge bg-success">Completed</span>
+                                        {% endif %}
+                                    </div>
+                                    <p class="mb-1">{{ quiz.description }}</p>
+                                    <div class="d-flex justify-content-between align-items-center mt-2">
+                                        <small class="text-muted">
+                                            <i class="fas fa-clock me-1"></i> {{ quiz.time_limit }} minutes
+                                            <i class="fas fa-question-circle ms-3 me-1"></i> {{ quiz.questions.count }} questions
+                                            <i class="fas fa-trophy ms-3 me-1"></i> Passing score: {{ quiz.passing_score }}%
+                                        </small>
+                                        <a href="{% url 'courses:take_quiz' course.slug quiz.id %}" class="btn btn-primary btn-sm">
+                                            {% if quiz in progress.completed_quizzes.all %}
+                                                Retake Quiz
+                                            {% else %}
+                                                Start Quiz
+                                            {% endif %}
+                                        </a>
+                                    </div>
+                                </div>
+                            {% endfor %}
+                        </div>
+                    {% else %}
+                        <div class="alert alert-info">
+                            <i class="fas fa-info-circle"></i> No quizzes available for this module.
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-lg-4">
+            <div class="card mb-4 sticky-top" style="top: 20px;">
+                <div class="card-header bg-success text-white">
+                    <h5 class="card-title mb-0">Module Progress</h5>
+                </div>
+                <div class="card-body">
+                    {% if progress %}
+                        <div class="progress mb-3">
+                            <div class="progress-bar bg-success" role="progressbar" style="width: {{ progress.completion_percentage }}%;" 
+                                aria-valuenow="{{ progress.completion_percentage }}" aria-valuemin="0" aria-valuemax="100">
+                                {{ progress.completion_percentage|floatformat:0 }}%
+                            </div>
+                        </div>
+                        
+                        <div class="d-flex justify-content-between mb-3">
+                            <div>
+                                <i class="fas fa-book text-primary"></i> Lessons
+                            </div>
+                            <div>
+                                {{ progress.completed_lessons.count }} / {{ lessons|length }}
+                            </div>
+                        </div>
+                        
+                        <div class="d-flex justify-content-between mb-3">
+                            <div>
+                                <i class="fas fa-question-circle text-info"></i> Quizzes
+                            </div>
+                            <div>
+                                {{ progress.completed_quizzes.count }} / {{ quizzes|length }}
+                            </div>
+                        </div>
+                        
+                        {% if progress.completion_percentage == 100 %}
+                            <div class="alert alert-success">
+                                <i class="fas fa-check-circle"></i> You've completed this module!
+                            </div>
+                        {% else %}
+                            <div class="alert alert-info">
+                                <i class="fas fa-info-circle"></i> Complete all lessons and quizzes to finish this module.
+                            </div>
+                        {% endif %}
+                    {% else %}
+                        <div class="alert alert-warning">
+                            <i class="fas fa-exclamation-triangle"></i> Progress tracking is not available.
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+            
+            <div class="card mb-4">
+                <div class="card-header bg-primary text-white">
+                    <h5 class="card-title mb-0">Module Navigation</h5>
+                </div>
+                <div class="card-body">
+                    <div class="d-grid gap-2">
+                        <a href="{% url 'courses:module_list' course.slug %}" class="btn btn-outline-primary">
+                            <i class="fas fa-list"></i> All Modules
+                        </a>
+                        
+                        {% if prev_module %}
+                            <a href="{% url 'courses:module_detail' course.slug prev_module.id %}" class="btn btn-outline-secondary">
+                                <i class="fas fa-arrow-left"></i> Previous Module
+                            </a>
+                        {% endif %}
+                        
+                        {% if next_module %}
+                            <a href="{% url 'courses:module_detail' course.slug next_module.id %}" class="btn btn-outline-success">
+                                <i class="fas fa-arrow-right"></i> Next Module
+                            </a>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %} 

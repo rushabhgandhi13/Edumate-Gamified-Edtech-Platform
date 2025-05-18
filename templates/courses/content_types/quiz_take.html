@@ -1,0 +1,331 @@
+{% extends 'base.html' %}
+{% load static %}
+{% load course_extras %}
+
+{% block title %}Taking Quiz - {{ quiz.title }}{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="card">
+        <div class="card-header bg-primary text-white d-flex justify-content-between align-items-center">
+            <h4 class="mb-0">{{ quiz.title }}</h4>
+            <div>
+                {% if quiz.time_limit %}
+                    <span class="badge bg-warning text-dark" id="timer">
+                        <i class="fas fa-clock me-1"></i>
+                        <span id="minutes">{{ quiz.time_limit }}</span>:<span id="seconds">00</span>
+                    </span>
+                {% endif %}
+                <span class="badge bg-light text-dark ms-2">
+                    Question <span id="current-question">1</span> of {{ questions|length }}
+                </span>
+            </div>
+        </div>
+        <div class="card-body">
+            <!-- Debug Info -->
+            {% if debug_info %}
+            <div class="alert alert-info">
+                <h5>Debug Information:</h5>
+                <p>Quiz Title: {{ debug_info.quiz_title }}</p>
+                <p>Questions Count: {{ debug_info.questions_count }}</p>
+                <p>Has Questions: {{ debug_info.has_questions }}</p>
+            </div>
+            {% endif %}
+
+            <form method="post" id="quiz-form">
+                {% csrf_token %}
+                
+                <div class="progress mb-4">
+                    <div class="progress-bar bg-success" role="progressbar" style="width: 0%;" id="progress-bar" aria-valuenow="0" aria-valuemin="0" aria-valuemax="100">0%</div>
+                </div>
+                
+                {% for question in questions %}
+                    <div class="question-container" id="question-{{ forloop.counter }}" {% if not forloop.first %}style="display: none;"{% endif %}>
+                        <div class="card mb-4">
+                            <div class="card-header bg-light d-flex justify-content-between align-items-center">
+                                <h5 class="mb-0">Question {{ forloop.counter }}</h5>
+                                <span class="badge bg-primary">{{ question.points }} points</span>
+                            </div>
+                            <div class="card-body">
+                                <p class="lead">{{ question.text }}</p>
+                                
+                                <div class="answers-container">
+                                    {% with answers=question.answers.all %}
+                                    {% if answers|length > 0 %}
+                                        {% for answer in answers %}
+                                            <div class="form-check mb-3">
+                                                <input class="form-check-input" type="radio" 
+                                                       name="question_{{ question.id }}" 
+                                                       id="answer_{{ answer.id }}" 
+                                                       value="{{ answer.id }}"
+                                                       {% if user_answers and user_answers|get_item:question.id == answer.id %}checked{% endif %}>
+                                                <label class="form-check-label" for="answer_{{ answer.id }}">
+                                                    {{ answer.text }}
+                                                </label>
+                                            </div>
+                                        {% endfor %}
+                                        
+                                        {% if answers|length < 2 %}
+                                            <div class="alert alert-warning">
+                                                <i class="fas fa-exclamation-triangle me-2"></i>
+                                                This question has only {{ answers|length }} option(s). There should be multiple options for a proper quiz question.
+                                            </div>
+                                        {% endif %}
+                                    {% else %}
+                                        <div class="alert alert-warning">
+                                            <i class="fas fa-exclamation-triangle me-2"></i>
+                                            No options available for this question. Please contact your instructor.
+                                        </div>
+                                    {% endif %}
+                                    {% endwith %}
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="d-flex justify-content-between">
+                            {% if not forloop.first %}
+                                <button type="button" class="btn btn-outline-primary prev-question" data-question="{{ forloop.counter }}">
+                                    <i class="fas fa-arrow-left me-1"></i> Previous Question
+                                </button>
+                            {% else %}
+                                <div></div>
+                            {% endif %}
+                            
+                            {% if not forloop.last %}
+                                <button type="button" class="btn btn-primary next-question" data-question="{{ forloop.counter }}">
+                                    Next Question <i class="fas fa-arrow-right ms-1"></i>
+                                </button>
+                            {% else %}
+                                <button type="submit" name="submit_quiz" class="btn btn-success">
+                                    <i class="fas fa-check-circle me-1"></i> Submit Quiz
+                                </button>
+                            {% endif %}
+                        </div>
+                    </div>
+                {% empty %}
+                    <div class="alert alert-warning">
+                        <i class="fas fa-exclamation-triangle me-2"></i>
+                        No questions are available for this quiz yet.
+                    </div>
+                {% endfor %}
+                
+                <div class="mt-4 text-center">
+                    <div class="btn-group" role="group" aria-label="Question navigation">
+                        {% for question in questions %}
+                            <button type="button" class="btn btn-outline-primary question-nav-btn" data-question="{{ forloop.counter }}">{{ forloop.counter }}</button>
+                        {% endfor %}
+                    </div>
+                </div>
+            </form>
+        </div>
+        <div class="card-footer">
+            <div class="d-flex justify-content-between align-items-center">
+                <a href="{% url 'courses:view_content' content.id %}" class="btn btn-outline-secondary">
+                    <i class="fas fa-times me-1"></i> Exit Quiz
+                </a>
+                
+                {% if questions %}
+                <button type="button" class="btn btn-success" id="submit-quiz-btn">
+                    <i class="fas fa-check-circle me-1"></i> Submit Quiz
+                </button>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Confirmation Modal -->
+<div class="modal fade" id="confirmSubmitModal" tabindex="-1" aria-labelledby="confirmSubmitModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header bg-warning text-dark">
+                <h5 class="modal-title" id="confirmSubmitModalLabel">Confirm Submission</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <p>Are you sure you want to submit your quiz?</p>
+                <div id="unanswered-warning" class="alert alert-danger" style="display: none;">
+                    <i class="fas fa-exclamation-triangle me-2"></i>
+                    You have <span id="unanswered-count">0</span> unanswered questions.
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                <button type="button" class="btn btn-success" id="confirm-submit">Yes, Submit Quiz</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Exit Confirmation Modal -->
+<div class="modal fade" id="confirmExitModal" tabindex="-1" aria-labelledby="confirmExitModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header bg-danger text-white">
+                <h5 class="modal-title" id="confirmExitModalLabel">Confirm Exit</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <p>Are you sure you want to exit the quiz? Your progress will be lost.</p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                <a href="{% url 'courses:view_content' content.id %}" class="btn btn-danger">Yes, Exit Quiz</a>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const totalQuestions = {{ questions|length }};
+        let currentQuestion = 1;
+        let answeredQuestions = new Set();
+        
+        // Timer functionality
+        {% if quiz.time_limit %}
+            let timeLeft = {{ quiz.time_limit }} * 60; // Convert to seconds
+            const timerInterval = setInterval(function() {
+                timeLeft--;
+                
+                const minutes = Math.floor(timeLeft / 60);
+                const seconds = timeLeft % 60;
+                
+                document.getElementById('minutes').textContent = minutes.toString().padStart(2, '0');
+                document.getElementById('seconds').textContent = seconds.toString().padStart(2, '0');
+                
+                if (timeLeft <= 0) {
+                    clearInterval(timerInterval);
+                    alert('Time is up! Your quiz will be submitted automatically.');
+                    document.getElementById('quiz-form').submit();
+                }
+            }, 1000);
+        {% endif %}
+        
+        // Show a specific question
+        function showQuestion(questionNumber) {
+            // Hide all questions
+            document.querySelectorAll('.question-container').forEach(container => {
+                container.style.display = 'none';
+            });
+            
+            // Show the selected question
+            const questionContainer = document.getElementById(`question-${questionNumber}`);
+            if (questionContainer) {
+                questionContainer.style.display = 'block';
+                currentQuestion = questionNumber;
+                document.getElementById('current-question').textContent = questionNumber;
+                
+                // Update navigation buttons
+                document.querySelectorAll('.question-nav-btn').forEach(btn => {
+                    btn.classList.remove('btn-primary');
+                    btn.classList.add('btn-outline-primary');
+                });
+                
+                const currentNavBtn = document.querySelector(`.question-nav-btn[data-question="${questionNumber}"]`);
+                if (currentNavBtn) {
+                    currentNavBtn.classList.remove('btn-outline-primary');
+                    currentNavBtn.classList.add('btn-primary');
+                }
+            }
+        }
+        
+        // Check if a question is answered
+        function checkIfAnswered(questionNumber) {
+            const questionContainer = document.getElementById(`question-${questionNumber}`);
+            if (!questionContainer) return false;
+            
+            const radioButtons = questionContainer.querySelectorAll('input[type="radio"]:checked');
+            if (radioButtons.length > 0) {
+                answeredQuestions.add(questionNumber);
+                return true;
+            }
+            return false;
+        }
+        
+        // Update progress bar
+        function updateProgress() {
+            const progress = (answeredQuestions.size / totalQuestions) * 100;
+            const progressBar = document.getElementById('progress-bar');
+            progressBar.style.width = `${progress}%`;
+            progressBar.textContent = `${Math.round(progress)}%`;
+            progressBar.setAttribute('aria-valuenow', progress);
+        }
+        
+        // Navigation buttons
+        document.querySelectorAll('.next-question').forEach(button => {
+            button.addEventListener('click', function() {
+                const questionNumber = parseInt(this.dataset.question);
+                checkIfAnswered(questionNumber);
+                showQuestion(questionNumber + 1);
+                updateProgress();
+            });
+        });
+        
+        document.querySelectorAll('.prev-question').forEach(button => {
+            button.addEventListener('click', function() {
+                const questionNumber = parseInt(this.dataset.question);
+                checkIfAnswered(questionNumber);
+                showQuestion(questionNumber - 1);
+                updateProgress();
+            });
+        });
+        
+        document.querySelectorAll('.question-nav-btn').forEach(button => {
+            button.addEventListener('click', function() {
+                const questionNumber = parseInt(this.dataset.question);
+                checkIfAnswered(currentQuestion);
+                showQuestion(questionNumber);
+                updateProgress();
+            });
+        });
+        
+        // Submit quiz button
+        document.getElementById('submit-quiz-btn')?.addEventListener('click', function() {
+            checkIfAnswered(currentQuestion);
+            
+            // Check for unanswered questions
+            const unansweredCount = totalQuestions - answeredQuestions.size;
+            const unansweredWarning = document.getElementById('unanswered-warning');
+            const unansweredCountElement = document.getElementById('unanswered-count');
+            
+            if (unansweredCount > 0) {
+                unansweredWarning.style.display = 'block';
+                unansweredCountElement.textContent = unansweredCount;
+            } else {
+                unansweredWarning.style.display = 'none';
+            }
+            
+            // Show confirmation modal
+            const confirmModal = new bootstrap.Modal(document.getElementById('confirmSubmitModal'));
+            confirmModal.show();
+        });
+        
+        // Confirm submit button
+        document.getElementById('confirm-submit')?.addEventListener('click', function() {
+            document.getElementById('quiz-form').submit();
+        });
+        
+        // Exit quiz button
+        document.getElementById('exit-quiz')?.addEventListener('click', function(e) {
+            e.preventDefault();
+            const confirmModal = new bootstrap.Modal(document.getElementById('confirmExitModal'));
+            confirmModal.show();
+        });
+        
+        // Initialize
+        showQuestion(1);
+        updateProgress();
+        
+        // Check for previously answered questions
+        for (let i = 1; i <= totalQuestions; i++) {
+            if (checkIfAnswered(i)) {
+                answeredQuestions.add(i);
+            }
+        }
+        updateProgress();
+    });
+</script>
+{% endblock %} 

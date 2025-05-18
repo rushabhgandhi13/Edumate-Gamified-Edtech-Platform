@@ -1,0 +1,146 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Create New Course{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="row">
+        <!-- Sidebar -->
+        <div class="col-md-3">
+            <div class="card mb-4">
+                <div class="card-header bg-primary text-white">
+                    <h5 class="mb-0">Instructor Menu</h5>
+                </div>
+                <div class="list-group list-group-flush">
+                    <a href="{% url 'courses:instructor_dashboard' %}" class="list-group-item list-group-item-action">
+                        <i class="fas fa-tachometer-alt me-2"></i> Dashboard
+                    </a>
+                    <a href="{% url 'courses:instructor_courses' %}" class="list-group-item list-group-item-action">
+                        <i class="fas fa-book me-2"></i> My Courses
+                    </a>
+                    <a href="{% url 'courses:create_course' %}" class="list-group-item list-group-item-action active">
+                        <i class="fas fa-plus-circle me-2"></i> Create Course
+                    </a>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Main Content -->
+        <div class="col-md-9">
+            <div class="card">
+                <div class="card-header bg-primary text-white">
+                    <h4 class="mb-0">Create New Course</h4>
+                </div>
+                <div class="card-body">
+                    <form method="post" enctype="multipart/form-data">
+                        {% csrf_token %}
+                        
+                        <div class="mb-3">
+                            <label for="{{ form.title.id_for_label }}" class="form-label">Course Title</label>
+                            {{ form.title }}
+                            {% if form.title.errors %}
+                                <div class="text-danger">{{ form.title.errors }}</div>
+                            {% endif %}
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label for="{{ form.slug.id_for_label }}" class="form-label">URL Slug</label>
+                            {{ form.slug }}
+                            <div class="form-text">{{ form.slug.help_text }}</div>
+                            {% if form.slug.errors %}
+                                <div class="text-danger">{{ form.slug.errors }}</div>
+                            {% endif %}
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label for="{{ form.overview.id_for_label }}" class="form-label">Course Overview</label>
+                            {{ form.overview }}
+                            {% if form.overview.errors %}
+                                <div class="text-danger">{{ form.overview.errors }}</div>
+                            {% endif %}
+                        </div>
+                        
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label for="{{ form.category.id_for_label }}" class="form-label">Category</label>
+                                    {{ form.category }}
+                                    {% if form.category.errors %}
+                                        <div class="text-danger">{{ form.category.errors }}</div>
+                                    {% endif %}
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label for="{{ form.difficulty_level.id_for_label }}" class="form-label">Difficulty Level</label>
+                                    {{ form.difficulty_level }}
+                                    {% if form.difficulty_level.errors %}
+                                        <div class="text-danger">{{ form.difficulty_level.errors }}</div>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label for="{{ form.thumbnail.id_for_label }}" class="form-label">Course Thumbnail</label>
+                            {{ form.thumbnail }}
+                            {% if form.thumbnail.errors %}
+                                <div class="text-danger">{{ form.thumbnail.errors }}</div>
+                            {% endif %}
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label for="{{ form.points_reward.id_for_label }}" class="form-label">Points Reward</label>
+                            {{ form.points_reward }}
+                            <div class="form-text">Points awarded to students upon course completion</div>
+                            {% if form.points_reward.errors %}
+                                <div class="text-danger">{{ form.points_reward.errors }}</div>
+                            {% endif %}
+                        </div>
+                        
+                        <div class="mb-3 form-check">
+                            {{ form.is_published }}
+                            <label class="form-check-label" for="{{ form.is_published.id_for_label }}">
+                                Publish Course
+                            </label>
+                            <div class="form-text">{{ form.is_published.help_text }}</div>
+                            {% if form.is_published.errors %}
+                                <div class="text-danger">{{ form.is_published.errors }}</div>
+                            {% endif %}
+                        </div>
+                        
+                        <div class="d-grid gap-2 d-md-flex justify-content-md-end">
+                            <a href="{% url 'courses:instructor_courses' %}" class="btn btn-secondary me-md-2">Cancel</a>
+                            <button type="submit" class="btn btn-primary">Create Course</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    // Auto-generate slug from title
+    document.addEventListener('DOMContentLoaded', function() {
+        const titleInput = document.getElementById('{{ form.title.id_for_label }}');
+        const slugInput = document.getElementById('{{ form.slug.id_for_label }}');
+        
+        titleInput.addEventListener('keyup', function() {
+            if (!slugInput.value) {
+                // Convert title to slug format
+                const slug = titleInput.value
+                    .toLowerCase()
+                    .replace(/[^\w\s-]/g, '')  // Remove special chars
+                    .replace(/\s+/g, '-')      // Replace spaces with hyphens
+                    .replace(/-+/g, '-');      // Remove consecutive hyphens
+                
+                slugInput.value = slug;
+            }
+        });
+    });
+</script>
+{% endblock %} 

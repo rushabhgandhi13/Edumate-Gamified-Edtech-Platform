@@ -1,0 +1,183 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}{{ content.title }} - Video{% endblock %}
+
+{% block content %}
+<div class="container-fluid mt-4">
+    <div class="row">
+        <!-- Content Navigation Sidebar -->
+        <div class="col-md-3">
+            <div class="card mb-4">
+                <div class="card-header bg-primary text-white">
+                    <h5 class="mb-0">{{ module.title }}</h5>
+                </div>
+                <div class="list-group list-group-flush">
+                    {% for item in module.content_set.all %}
+                        <a href="{% url 'courses:view_content' item.id %}" class="list-group-item list-group-item-action {% if item.id == content.id %}active{% endif %}">
+                            <div class="d-flex w-100 justify-content-between align-items-center">
+                                <div>
+                                    <i class="
+                                        {% if item.video %}
+                                            {% if item.video.is_short %}fas fa-film{% else %}fas fa-video{% endif %}
+                                        {% elif item.blog %}
+                                            fas fa-file-alt
+                                        {% elif item.quiz %}
+                                            fas fa-question-circle
+                                        {% else %}
+                                            fas fa-file
+                                        {% endif %}
+                                        me-2
+                                    "></i>
+                                    {{ item.title }}
+                                </div>
+                                {% if item.is_completed %}
+                                    <i class="fas fa-check-circle {% if item.id == content.id %}text-white{% else %}text-success{% endif %}"></i>
+                                {% endif %}
+                            </div>
+                        </a>
+                    {% endfor %}
+                </div>
+                <div class="card-footer">
+                    <a href="{% url 'courses:course_content' course.slug %}" class="btn btn-outline-primary btn-sm w-100">
+                        <i class="fas fa-arrow-left me-1"></i> Back to Course
+                    </a>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Main Content Area -->
+        <div class="col-md-9">
+            <div class="card">
+                <div class="card-header bg-primary text-white d-flex justify-content-between align-items-center">
+                    <h4 class="mb-0">{{ content.title }}</h4>
+                    <span class="badge bg-light text-dark">
+                        {% if content_data.is_short %}
+                            Short Video
+                        {% else %}
+                            Video
+                        {% endif %}
+                    </span>
+                </div>
+                <div class="card-body">
+                    <div class="mb-4">
+                        {% if content_data.url %}
+                            <!-- Embedded video from URL -->
+                            <div class="ratio ratio-16x9 mb-3">
+                                {% if 'youtube.com' in content_data.url or 'youtu.be' in content_data.url %}
+                                    {% with content_data.url|slice:"32:" as video_id %}
+                                        <iframe src="https://www.youtube.com/embed/{{ video_id }}" title="{{ content.title }}" allowfullscreen></iframe>
+                                    {% endwith %}
+                                {% elif 'vimeo.com' in content_data.url %}
+                                    {% with content_data.url|slice:"18:" as video_id %}
+                                        <iframe src="https://player.vimeo.com/video/{{ video_id }}" title="{{ content.title }}" allowfullscreen></iframe>
+                                    {% endwith %}
+                                {% else %}
+                                    <div class="alert alert-warning">
+                                        <i class="fas fa-exclamation-triangle me-2"></i>
+                                        Unsupported video URL. <a href="{{ content_data.url }}" target="_blank">Open video in new tab</a>
+                                    </div>
+                                {% endif %}
+                            </div>
+                        {% elif content_data.file %}
+                            <!-- Video file -->
+                            <div class="ratio ratio-16x9 mb-3">
+                                <video controls>
+                                    <source src="{{ content_data.file.url }}" type="video/mp4">
+                                    Your browser does not support the video tag.
+                                </video>
+                            </div>
+                        {% else %}
+                            <div class="alert alert-warning">
+                                <i class="fas fa-exclamation-triangle me-2"></i>
+                                No video source available.
+                            </div>
+                        {% endif %}
+                    </div>
+                    
+                    <h5>Description</h5>
+                    <p>{{ content.description }}</p>
+                    
+                    <!-- AI-Generated Summary -->
+                    <div class="card mb-4">
+                        <div class="card-header bg-info text-white">
+                            <h5 class="mb-0">
+                                <i class="fas fa-robot me-2"></i>
+                                AI-Generated Summary
+                            </h5>
+                        </div>
+                        <div class="card-body">
+                            <p>{{ content_data.ai_summary|default:"No AI summary available for this video yet." }}</p>
+                            
+                            {% if not content_data.ai_summary %}
+                                <button class="btn btn-sm btn-outline-info">
+                                    <i class="fas fa-magic me-1"></i>
+                                    Generate Summary
+                                </button>
+                            {% endif %}
+                        </div>
+                    </div>
+                    
+                    <!-- Key Points -->
+                    <div class="card mb-4">
+                        <div class="card-header bg-success text-white">
+                            <h5 class="mb-0">
+                                <i class="fas fa-lightbulb me-2"></i>
+                                Key Points
+                            </h5>
+                        </div>
+                        <div class="card-body">
+                            {% if content_data.key_points %}
+                                <ul>
+                                    {% for point in content_data.key_points %}
+                                        <li>{{ point }}</li>
+                                    {% endfor %}
+                                </ul>
+                            {% else %}
+                                <p>No key points available for this video yet.</p>
+                                
+                                <button class="btn btn-sm btn-outline-success">
+                                    <i class="fas fa-magic me-1"></i>
+                                    Generate Key Points
+                                </button>
+                            {% endif %}
+                        </div>
+                    </div>
+                    
+                    <!-- Navigation Buttons -->
+                    <div class="d-flex justify-content-between mt-4">
+                        {% if prev_content %}
+                            <a href="{% url 'courses:view_content' prev_content.id %}" class="btn btn-outline-primary">
+                                <i class="fas fa-arrow-left me-1"></i>
+                                Previous: {{ prev_content.title|truncatechars:20 }}
+                            </a>
+                        {% else %}
+                            <button class="btn btn-outline-secondary" disabled>
+                                <i class="fas fa-arrow-left me-1"></i>
+                                Previous
+                            </button>
+                        {% endif %}
+                        
+                        <a href="{% url 'courses:course_content' course.slug %}" class="btn btn-outline-info">
+                            <i class="fas fa-th-list me-1"></i>
+                            Course Overview
+                        </a>
+                        
+                        {% if next_content %}
+                            <a href="{% url 'courses:view_content' next_content.id %}" class="btn btn-primary">
+                                Next: {{ next_content.title|truncatechars:20 }}
+                                <i class="fas fa-arrow-right ms-1"></i>
+                            </a>
+                        {% else %}
+                            <button class="btn btn-outline-secondary" disabled>
+                                Next
+                                <i class="fas fa-arrow-right ms-1"></i>
+                            </button>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %} 

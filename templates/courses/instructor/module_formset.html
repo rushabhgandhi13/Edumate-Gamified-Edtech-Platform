@@ -1,0 +1,248 @@
+{% extends 'base.html' %}
+{% load static %}
+{% load crispy_forms_tags %}
+
+{% block title %}Manage Modules - {{ course.title }}{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="row">
+        <!-- Sidebar -->
+        <div class="col-md-3">
+            <div class="card mb-4">
+                <div class="card-header bg-primary text-white">
+                    <h5 class="mb-0">Instructor Menu</h5>
+                </div>
+                <div class="list-group list-group-flush">
+                    <a href="{% url 'courses:instructor_dashboard' %}" class="list-group-item list-group-item-action">
+                        <i class="fas fa-tachometer-alt me-2"></i> Dashboard
+                    </a>
+                    <a href="{% url 'courses:instructor_courses' %}" class="list-group-item list-group-item-action">
+                        <i class="fas fa-book me-2"></i> My Courses
+                    </a>
+                </div>
+            </div>
+
+            <div class="card mb-4">
+                <div class="card-header bg-info text-white">
+                    <h5 class="mb-0">Course Navigation</h5>
+                </div>
+                <div class="list-group list-group-flush">
+                    <a href="{% url 'courses:course_detail' course.slug %}" class="list-group-item list-group-item-action">
+                        <i class="fas fa-arrow-left me-2"></i> Back to Course
+                    </a>
+                    <a href="{% url 'courses:edit_course' course.id %}" class="list-group-item list-group-item-action">
+                        <i class="fas fa-edit me-2"></i> Edit Course Details
+                    </a>
+                </div>
+            </div>
+        </div>
+
+        <!-- Main Content -->
+        <div class="col-md-9">
+            <div class="card">
+                <div class="card-header bg-primary text-white">
+                    <h4 class="mb-0">Manage Modules - {{ course.title }}</h4>
+                </div>
+                <div class="card-body">
+                    <!-- Add informative message -->
+                    <div class="alert alert-info mb-4">
+                        <i class="fas fa-info-circle me-2"></i>
+                        <strong>Module Creation Workflow:</strong>
+                        <ul class="mb-0 mt-2">
+                            <li>First, create your modules and arrange them in the desired order</li>
+                            <li>After saving the modules, you'll be able to add content (lessons, videos, quizzes) to each module</li>
+                            <li>Use the "Manage Content" button that will appear for each saved module to add your content</li>
+                        </ul>
+                    </div>
+
+                    <form method="post" id="module-form">
+                        {% csrf_token %}
+                        {{ formset.management_form }}
+                        
+                        <div class="module-forms">
+                            {% for form in formset %}
+                                <div class="card mb-3 module-form">
+                                    <div class="card-header bg-light d-flex justify-content-between align-items-center">
+                                        <h5 class="mb-0">Module {{ forloop.counter }}</h5>
+                                        {% if form.instance.pk and formset.can_delete %}
+                                            <div class="form-check">
+                                                {{ form.DELETE }}
+                                                <label class="form-check-label text-danger" for="{{ form.DELETE.id_for_label }}">
+                                                    Delete this module
+                                                </label>
+                                            </div>
+                                        {% endif %}
+                                    </div>
+                                    <div class="card-body">
+                                        {% for hidden in form.hidden_fields %}
+                                            {{ hidden }}
+                                        {% endfor %}
+                                        
+                                        <div class="row">
+                                            <div class="col-md-8">
+                                                {{ form.title|as_crispy_field }}
+                                            </div>
+                                            <div class="col-md-4">
+                                                {{ form.order|as_crispy_field }}
+                                            </div>
+                                        </div>
+                                        
+                                        {{ form.description|as_crispy_field }}
+
+                                        {% if not form.instance.id %}
+                                        <div class="text-muted small mt-2">
+                                            <i class="fas fa-lightbulb me-1"></i>
+                                            After saving this module, you'll be able to add lessons, videos, and quizzes.
+                                        </div>
+                                        {% endif %}
+                                    </div>
+                                    
+                                    {% if form.instance.id %}
+                                        <div class="card-footer">
+                                            <a href="{% url 'courses:module_content_list' form.instance.id %}" class="btn btn-info btn-sm">
+                                                <i class="fas fa-list me-1"></i> Manage Content
+                                            </a>
+                                        </div>
+                                    {% endif %}
+                                </div>
+                            {% endfor %}
+                        </div>
+                        
+                        <div class="d-flex justify-content-between align-items-center mt-4">
+                            <button type="button" id="add-module" class="btn btn-success" {% if formset.total_form_count >= 20 %}disabled{% endif %}>
+                                <i class="fas fa-plus-circle me-1"></i> Add Another Module
+                            </button>
+                            
+                            <div>
+                                <a href="{% url 'courses:course_detail' course.slug %}" class="btn btn-secondary me-2">Cancel</a>
+                                <button type="submit" class="btn btn-primary">Save Changes</button>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const addModuleBtn = document.getElementById('add-module');
+    const moduleFormsContainer = document.querySelector('.module-forms');
+    const totalFormsInput = document.getElementById('id_form-TOTAL_FORMS');
+    const maxForms = 20;
+
+    if (addModuleBtn) {
+        addModuleBtn.addEventListener('click', function() {
+            const forms = moduleFormsContainer.getElementsByClassName('module-form');
+            const formCount = forms.length;
+            
+            // Check maximum forms limit
+            if (formCount >= maxForms) {
+                alert('Maximum number of modules (20) reached');
+                return;
+            }
+
+            // Get the empty form template
+            const emptyFormHtml = moduleFormsContainer.querySelector('.module-form').cloneNode(true);
+            
+            // Update form index
+            const newFormHtml = emptyFormHtml.innerHTML.replace(/__prefix__/g, formCount);
+            emptyFormHtml.innerHTML = newFormHtml;
+
+            // Clear all input values
+            emptyFormHtml.querySelectorAll('input[type="text"], textarea').forEach(input => {
+                input.value = '';
+            });
+
+            // Update the header
+            const header = emptyFormHtml.querySelector('.card-header h5');
+            if (header) {
+                header.textContent = `Module ${formCount + 1}`;
+            }
+
+            // Set a default order
+            const orderInput = emptyFormHtml.querySelector('input[name$="-order"]');
+            if (orderInput) {
+                orderInput.value = formCount + 1;
+            }
+
+            // Remove any existing error messages
+            emptyFormHtml.querySelectorAll('.invalid-feedback').forEach(el => el.remove());
+            emptyFormHtml.querySelectorAll('.is-invalid').forEach(el => 
+                el.classList.remove('is-invalid')
+            );
+
+            // Remove the manage content footer if it exists
+            const footer = emptyFormHtml.querySelector('.card-footer');
+            if (footer) {
+                footer.remove();
+            }
+
+            // Add the new form
+            moduleFormsContainer.appendChild(emptyFormHtml);
+
+            // Update total forms count
+            totalFormsInput.value = formCount + 1;
+
+            // Disable add button if max reached
+            if (formCount + 1 >= maxForms) {
+                addModuleBtn.disabled = true;
+            }
+        });
+    }
+
+    // Form validation
+    const moduleForm = document.getElementById('module-form');
+    if (moduleForm) {
+        moduleForm.addEventListener('submit', function(e) {
+            let isValid = true;
+            const forms = document.querySelectorAll('.module-form');
+            
+            forms.forEach((form) => {
+                const titleInput = form.querySelector('input[name$="-title"]');
+                const orderInput = form.querySelector('input[name$="-order"]');
+                const deleteCheckbox = form.querySelector('input[name$="-DELETE"]');
+                
+                // Skip validation for forms marked for deletion
+                if (deleteCheckbox && deleteCheckbox.checked) {
+                    return;
+                }
+                
+                // Validate title
+                if (!titleInput.value.trim()) {
+                    isValid = false;
+                    titleInput.classList.add('is-invalid');
+                    if (!titleInput.nextElementSibling?.classList.contains('invalid-feedback')) {
+                        const feedback = document.createElement('div');
+                        feedback.className = 'invalid-feedback';
+                        feedback.textContent = 'Title is required';
+                        titleInput.parentNode.appendChild(feedback);
+                    }
+                }
+                
+                // Validate order
+                if (!orderInput.value.trim() || isNaN(orderInput.value)) {
+                    isValid = false;
+                    orderInput.classList.add('is-invalid');
+                    if (!orderInput.nextElementSibling?.classList.contains('invalid-feedback')) {
+                        const feedback = document.createElement('div');
+                        feedback.className = 'invalid-feedback';
+                        feedback.textContent = 'Valid order number is required';
+                        orderInput.parentNode.appendChild(feedback);
+                    }
+                }
+            });
+            
+            if (!isValid) {
+                e.preventDefault();
+                alert('Please fill in all required fields correctly.');
+            }
+        });
+    }
+});
+</script>
+{% endblock %} 

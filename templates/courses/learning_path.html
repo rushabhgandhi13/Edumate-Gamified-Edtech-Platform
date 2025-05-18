@@ -1,0 +1,587 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}My Learning Path{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="row">
+        <div class="col-md-3">
+            <!-- Sidebar -->
+            <div class="card mb-4">
+                <div class="card-header bg-primary text-white">
+                    <h5 class="mb-0">Learning Dashboard</h5>
+                </div>
+                <div class="list-group list-group-flush">
+                    <a href="{% url 'accounts:dashboard' %}" class="list-group-item list-group-item-action">
+                        <i class="fas fa-tachometer-alt me-2"></i> Main Dashboard
+                    </a>
+                    <a href="{% url 'courses:my_courses' %}" class="list-group-item list-group-item-action">
+                        <i class="fas fa-book me-2"></i> My Courses
+                    </a>
+                    <a href="{% url 'courses:personalized_recommendations' %}" class="list-group-item list-group-item-action">
+                        <i class="fas fa-lightbulb me-2"></i> Recommendations
+                    </a>
+                    <a href="#" class="list-group-item list-group-item-action active">
+                        <i class="fas fa-road me-2"></i> Learning Path
+                    </a>
+                    <a href="{% url 'courses:study_planner' %}" class="list-group-item list-group-item-action">
+                        <i class="fas fa-calendar-alt me-2"></i> Study Planner
+                    </a>
+                </div>
+            </div>
+            
+            <!-- Learning Goals -->
+            <div class="card mb-4">
+                <div class="card-header bg-success text-white">
+                    <h5 class="mb-0">My Learning Goals</h5>
+                </div>
+                <div class="card-body">
+                    <ul class="list-group list-group-flush">
+                        {% for goal in learning_goals %}
+                            <li class="list-group-item d-flex justify-content-between align-items-center">
+                                {{ goal.title }}
+                                <div>
+                                    <div class="progress" style="width: 100px; height: 10px;">
+                                        <div class="progress-bar bg-success" role="progressbar" style="width: {{ goal.progress }}%;" aria-valuenow="{{ goal.progress }}" aria-valuemin="0" aria-valuemax="100"></div>
+                                    </div>
+                                    <small class="text-muted">{{ goal.progress }}%</small>
+                                </div>
+                            </li>
+                        {% endfor %}
+                    </ul>
+                    <button class="btn btn-sm btn-outline-success mt-3 w-100" data-bs-toggle="modal" data-bs-target="#addGoalModal">
+                        <i class="fas fa-plus me-1"></i> Add New Goal
+                    </button>
+                </div>
+            </div>
+            
+            <!-- Skills Progress -->
+            <div class="card">
+                <div class="card-header bg-info text-white">
+                    <h5 class="mb-0">Skills Progress</h5>
+                </div>
+                <div class="card-body">
+                    {% for skill in skills_progress %}
+                        <div class="mb-3">
+                            <div class="d-flex justify-content-between mb-1">
+                                <span>{{ skill.name }}</span>
+                                <span class="badge bg-info">{{ skill.level }}</span>
+                            </div>
+                            <div class="progress" style="height: 10px;">
+                                <div class="progress-bar bg-info" role="progressbar" style="width: {{ skill.progress }}%;" aria-valuenow="{{ skill.progress }}" aria-valuemin="0" aria-valuemax="100"></div>
+                            </div>
+                        </div>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-md-9">
+            <!-- Main Content -->
+            <div class="card mb-4">
+                <div class="card-header bg-primary text-white d-flex justify-content-between align-items-center">
+                    <h4 class="mb-0">My Learning Path</h4>
+                    <div>
+                        <button class="btn btn-light btn-sm" data-bs-toggle="modal" data-bs-target="#customizePathModal">
+                            <i class="fas fa-cog me-1"></i> Customize
+                        </button>
+                        <button class="btn btn-light btn-sm ms-2" id="print-path">
+                            <i class="fas fa-print me-1"></i> Print
+                        </button>
+                    </div>
+                </div>
+                <div class="card-body">
+                    <div class="alert alert-info">
+                        <i class="fas fa-info-circle me-2"></i>
+                        <strong>Your personalized learning journey:</strong> This path is designed based on your goals, current skills, and learning preferences.
+                    </div>
+                    
+                    <!-- Path Overview -->
+                    <div class="mb-4">
+                        <h5>Path Overview</h5>
+                        <div class="row">
+                            <div class="col-md-3 mb-3">
+                                <div class="card text-center h-100">
+                                    <div class="card-body">
+                                        <i class="fas fa-graduation-cap fa-2x text-primary mb-2"></i>
+                                        <h6>Estimated Completion</h6>
+                                        <p class="mb-0">{{ path_overview.estimated_completion }}</p>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-md-3 mb-3">
+                                <div class="card text-center h-100">
+                                    <div class="card-body">
+                                        <i class="fas fa-book fa-2x text-success mb-2"></i>
+                                        <h6>Total Courses</h6>
+                                        <p class="mb-0">{{ path_overview.total_courses }}</p>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-md-3 mb-3">
+                                <div class="card text-center h-100">
+                                    <div class="card-body">
+                                        <i class="fas fa-certificate fa-2x text-warning mb-2"></i>
+                                        <h6>Certificates</h6>
+                                        <p class="mb-0">{{ path_overview.certificates }}</p>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-md-3 mb-3">
+                                <div class="card text-center h-100">
+                                    <div class="card-body">
+                                        <i class="fas fa-clock fa-2x text-info mb-2"></i>
+                                        <h6>Total Hours</h6>
+                                        <p class="mb-0">{{ path_overview.total_hours }}</p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Learning Path Timeline -->
+                    <div class="learning-path-timeline">
+                        {% for milestone in learning_path %}
+                            <div class="timeline-item">
+                                <div class="timeline-badge {% if milestone.completed %}bg-success{% elif milestone.current %}bg-primary{% else %}bg-secondary{% endif %}">
+                                    {% if milestone.completed %}
+                                        <i class="fas fa-check"></i>
+                                    {% elif milestone.current %}
+                                        <i class="fas fa-arrow-right"></i>
+                                    {% else %}
+                                        <i class="fas fa-lock"></i>
+                                    {% endif %}
+                                </div>
+                                <div class="timeline-panel card">
+                                    <div class="card-header {% if milestone.completed %}bg-success text-white{% elif milestone.current %}bg-primary text-white{% else %}bg-light{% endif %}">
+                                        <h5 class="mb-0">{{ milestone.title }}</h5>
+                                    </div>
+                                    <div class="card-body">
+                                        <p>{{ milestone.description }}</p>
+                                        
+                                        {% if milestone.courses %}
+                                            <h6>Courses in this milestone:</h6>
+                                            <ul class="list-group mb-3">
+                                                {% for course in milestone.courses %}
+                                                    <li class="list-group-item d-flex justify-content-between align-items-center">
+                                                        <div>
+                                                            <h6 class="mb-0">{{ course.title }}</h6>
+                                                            <small class="text-muted">{{ course.duration }} • {{ course.difficulty }}</small>
+                                                        </div>
+                                                        <div>
+                                                            {% if course.completed %}
+                                                                <span class="badge bg-success">Completed</span>
+                                                            {% elif course.in_progress %}
+                                                                <a href="{{ course.url }}" class="btn btn-sm btn-primary">Continue</a>
+                                                            {% elif milestone.current or milestone.completed %}
+                                                                <a href="{{ course.url }}" class="btn btn-sm btn-outline-primary">Start</a>
+                                                            {% else %}
+                                                                <button class="btn btn-sm btn-outline-secondary" disabled>Locked</button>
+                                                            {% endif %}
+                                                        </div>
+                                                    </li>
+                                                {% endfor %}
+                                            </ul>
+                                        {% endif %}
+                                        
+                                        {% if milestone.skills %}
+                                            <h6>Skills you'll gain:</h6>
+                                            <div class="mb-3">
+                                                {% for skill in milestone.skills %}
+                                                    <span class="badge bg-info me-1 mb-1">{{ skill }}</span>
+                                                {% endfor %}
+                                            </div>
+                                        {% endif %}
+                                        
+                                        {% if milestone.completed %}
+                                            <div class="alert alert-success">
+                                                <i class="fas fa-trophy me-2"></i>
+                                                <strong>Milestone completed!</strong> You earned {{ milestone.points }} points.
+                                            </div>
+                                        {% elif milestone.current %}
+                                            <div class="progress mb-2" style="height: 10px;">
+                                                <div class="progress-bar bg-primary" role="progressbar" style="width: {{ milestone.progress }}%;" aria-valuenow="{{ milestone.progress }}" aria-valuemin="0" aria-valuemax="100"></div>
+                                            </div>
+                                            <small class="text-muted">{{ milestone.progress }}% complete</small>
+                                        {% endif %}
+                                    </div>
+                                </div>
+                            </div>
+                        {% endfor %}
+                    </div>
+                    
+                    <!-- Path Completion -->
+                    <div class="card mt-4">
+                        <div class="card-header bg-light">
+                            <h5 class="mb-0">Path Completion</h5>
+                        </div>
+                        <div class="card-body">
+                            <div class="progress mb-3" style="height: 20px;">
+                                <div class="progress-bar bg-success" role="progressbar" style="width: {{ path_completion.progress }}%;" aria-valuenow="{{ path_completion.progress }}" aria-valuemin="0" aria-valuemax="100">{{ path_completion.progress }}%</div>
+                            </div>
+                            
+                            <div class="row">
+                                <div class="col-md-4">
+                                    <div class="card text-center">
+                                        <div class="card-body">
+                                            <h6>Milestones Completed</h6>
+                                            <h4>{{ path_completion.milestones_completed }} / {{ path_completion.total_milestones }}</h4>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="col-md-4">
+                                    <div class="card text-center">
+                                        <div class="card-body">
+                                            <h6>Courses Completed</h6>
+                                            <h4>{{ path_completion.courses_completed }} / {{ path_completion.total_courses }}</h4>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="col-md-4">
+                                    <div class="card text-center">
+                                        <div class="card-body">
+                                            <h6>Points Earned</h6>
+                                            <h4>{{ path_completion.points_earned }}</h4>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            {% if path_completion.estimated_completion_date %}
+                                <div class="alert alert-info mt-3">
+                                    <i class="fas fa-calendar-check me-2"></i>
+                                    <strong>Estimated completion date:</strong> {{ path_completion.estimated_completion_date }}
+                                </div>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Add Goal Modal -->
+<div class="modal fade" id="addGoalModal" tabindex="-1" aria-labelledby="addGoalModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header bg-success text-white">
+                <h5 class="modal-title" id="addGoalModalLabel">Add Learning Goal</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <form id="goalForm">
+                    <div class="mb-3">
+                        <label for="goalTitle" class="form-label">Goal Title</label>
+                        <input type="text" class="form-control" id="goalTitle" placeholder="e.g., Master Python Programming">
+                    </div>
+                    <div class="mb-3">
+                        <label for="goalDescription" class="form-label">Description</label>
+                        <textarea class="form-control" id="goalDescription" rows="3" placeholder="Describe what you want to achieve"></textarea>
+                    </div>
+                    <div class="mb-3">
+                        <label for="goalDeadline" class="form-label">Target Completion Date</label>
+                        <input type="date" class="form-control" id="goalDeadline">
+                    </div>
+                    <div class="mb-3">
+                        <label for="goalPriority" class="form-label">Priority</label>
+                        <select class="form-select" id="goalPriority">
+                            <option value="high">High</option>
+                            <option value="medium" selected>Medium</option>
+                            <option value="low">Low</option>
+                        </select>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                <button type="button" class="btn btn-success" id="saveGoalBtn">Save Goal</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Customize Path Modal -->
+<div class="modal fade" id="customizePathModal" tabindex="-1" aria-labelledby="customizePathModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header bg-primary text-white">
+                <h5 class="modal-title" id="customizePathModalLabel">Customize Learning Path</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <div class="mb-4">
+                    <h6>Learning Preferences</h6>
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label for="learningPace" class="form-label">Learning Pace</label>
+                                <select class="form-select" id="learningPace">
+                                    <option value="relaxed">Relaxed (2-3 hours/week)</option>
+                                    <option value="moderate" selected>Moderate (5-7 hours/week)</option>
+                                    <option value="intensive">Intensive (10+ hours/week)</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label for="contentPreference" class="form-label">Content Preference</label>
+                                <select class="form-select" id="contentPreference">
+                                    <option value="video">Video-focused</option>
+                                    <option value="reading">Reading-focused</option>
+                                    <option value="interactive" selected>Interactive-focused</option>
+                                    <option value="balanced">Balanced mix</option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="mb-4">
+                    <h6>Focus Areas</h6>
+                    <div class="form-check mb-2">
+                        <input class="form-check-input" type="checkbox" value="" id="focusProgramming" checked>
+                        <label class="form-check-label" for="focusProgramming">
+                            Programming & Development
+                        </label>
+                    </div>
+                    <div class="form-check mb-2">
+                        <input class="form-check-input" type="checkbox" value="" id="focusDataScience" checked>
+                        <label class="form-check-label" for="focusDataScience">
+                            Data Science & Analytics
+                        </label>
+                    </div>
+                    <div class="form-check mb-2">
+                        <input class="form-check-input" type="checkbox" value="" id="focusAI">
+                        <label class="form-check-label" for="focusAI">
+                            Artificial Intelligence & Machine Learning
+                        </label>
+                    </div>
+                    <div class="form-check mb-2">
+                        <input class="form-check-input" type="checkbox" value="" id="focusWebDev">
+                        <label class="form-check-label" for="focusWebDev">
+                            Web Development
+                        </label>
+                    </div>
+                    <div class="form-check">
+                        <input class="form-check-input" type="checkbox" value="" id="focusMobile">
+                        <label class="form-check-label" for="focusMobile">
+                            Mobile App Development
+                        </label>
+                    </div>
+                </div>
+                
+                <div class="mb-4">
+                    <h6>Career Goals</h6>
+                    <div class="form-check mb-2">
+                        <input class="form-check-input" type="radio" name="careerGoal" id="careerSoftware" checked>
+                        <label class="form-check-label" for="careerSoftware">
+                            Software Developer
+                        </label>
+                    </div>
+                    <div class="form-check mb-2">
+                        <input class="form-check-input" type="radio" name="careerGoal" id="careerData">
+                        <label class="form-check-label" for="careerData">
+                            Data Scientist
+                        </label>
+                    </div>
+                    <div class="form-check mb-2">
+                        <input class="form-check-input" type="radio" name="careerGoal" id="careerAI">
+                        <label class="form-check-label" for="careerAI">
+                            AI/ML Engineer
+                        </label>
+                    </div>
+                    <div class="form-check mb-2">
+                        <input class="form-check-input" type="radio" name="careerGoal" id="careerWeb">
+                        <label class="form-check-label" for="careerWeb">
+                            Web Developer
+                        </label>
+                    </div>
+                    <div class="form-check">
+                        <input class="form-check-input" type="radio" name="careerGoal" id="careerOther">
+                        <label class="form-check-label" for="careerOther">
+                            Other/Not Sure Yet
+                        </label>
+                    </div>
+                </div>
+                
+                <div class="alert alert-info">
+                    <i class="fas fa-lightbulb me-2"></i>
+                    <strong>Note:</strong> Changing these preferences will regenerate your learning path based on your selections.
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                <button type="button" class="btn btn-primary" id="updatePathBtn">Update Learning Path</button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_css %}
+<style>
+    /* Timeline styling */
+    .learning-path-timeline {
+        position: relative;
+        padding: 20px 0;
+    }
+    
+    .learning-path-timeline:before {
+        content: '';
+        position: absolute;
+        top: 0;
+        bottom: 0;
+        left: 20px;
+        width: 4px;
+        background: #e9ecef;
+        z-index: 0;
+    }
+    
+    .timeline-item {
+        position: relative;
+        margin-bottom: 30px;
+    }
+    
+    .timeline-badge {
+        position: absolute;
+        top: 16px;
+        left: 0;
+        width: 40px;
+        height: 40px;
+        border-radius: 50%;
+        text-align: center;
+        line-height: 40px;
+        color: white;
+        z-index: 1;
+    }
+    
+    .timeline-panel {
+        margin-left: 60px;
+        border-radius: 0.25rem;
+    }
+    
+    /* Print styles */
+    @media print {
+        .sidebar, .card-header button, .modal, .btn {
+            display: none !important;
+        }
+        
+        .container {
+            width: 100% !important;
+            max-width: 100% !important;
+        }
+        
+        .col-md-3 {
+            display: none !important;
+        }
+        
+        .col-md-9 {
+            width: 100% !important;
+            flex: 0 0 100% !important;
+            max-width: 100% !important;
+        }
+        
+        .card {
+            border: 1px solid #ddd !important;
+            break-inside: avoid;
+        }
+        
+        .timeline-badge {
+            border: 2px solid #333 !important;
+            color: #333 !important;
+            background-color: #fff !important;
+        }
+        
+        .learning-path-timeline:before {
+            background: #333 !important;
+        }
+    }
+</style>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Print button functionality
+        document.getElementById('print-path').addEventListener('click', function() {
+            window.print();
+        });
+        
+        // Save goal button
+        document.getElementById('saveGoalBtn').addEventListener('click', function() {
+            const title = document.getElementById('goalTitle').value;
+            const description = document.getElementById('goalDescription').value;
+            const deadline = document.getElementById('goalDeadline').value;
+            const priority = document.getElementById('goalPriority').value;
+            
+            if (!title) {
+                alert('Please enter a goal title');
+                return;
+            }
+            
+            // In a real implementation, this would make an AJAX call to save the goal
+            // For now, we'll just close the modal and show a success message
+            const modal = bootstrap.Modal.getInstance(document.getElementById('addGoalModal'));
+            modal.hide();
+            
+            // Add a temporary success message
+            const alertDiv = document.createElement('div');
+            alertDiv.className = 'alert alert-success alert-dismissible fade show';
+            alertDiv.innerHTML = `
+                <strong>Success!</strong> Your goal "${title}" has been added.
+                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+            `;
+            document.querySelector('.container').prepend(alertDiv);
+            
+            // Clear form
+            document.getElementById('goalForm').reset();
+            
+            // Remove alert after 5 seconds
+            setTimeout(() => {
+                alertDiv.remove();
+            }, 5000);
+        });
+        
+        // Update path button
+        document.getElementById('updatePathBtn').addEventListener('click', function() {
+            this.innerHTML = '<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> Updating...';
+            this.disabled = true;
+            
+            // Simulate API call with timeout
+            setTimeout(() => {
+                const modal = bootstrap.Modal.getInstance(document.getElementById('customizePathModal'));
+                modal.hide();
+                
+                // Add a temporary success message
+                const alertDiv = document.createElement('div');
+                alertDiv.className = 'alert alert-success alert-dismissible fade show';
+                alertDiv.innerHTML = `
+                    <strong>Success!</strong> Your learning path has been updated based on your preferences.
+                    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                `;
+                document.querySelector('.container').prepend(alertDiv);
+                
+                // Reset button
+                this.innerHTML = 'Update Learning Path';
+                this.disabled = false;
+                
+                // Remove alert after 5 seconds
+                setTimeout(() => {
+                    alertDiv.remove();
+                }, 5000);
+                
+                // In a real implementation, this would reload the page with the new path
+                // For now, we'll just simulate a change
+                document.querySelectorAll('.timeline-panel .card-body .progress-bar').forEach(bar => {
+                    const newProgress = Math.min(100, parseInt(bar.getAttribute('aria-valuenow')) + 5);
+                    bar.style.width = `${newProgress}%`;
+                    bar.setAttribute('aria-valuenow', newProgress);
+                    bar.closest('.card-body').querySelector('small.text-muted').textContent = `${newProgress}% complete`;
+                });
+            }, 1500);
+        });
+    });
+</script>
+{% endblock %} 

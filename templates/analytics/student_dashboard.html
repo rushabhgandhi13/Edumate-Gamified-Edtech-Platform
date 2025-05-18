@@ -1,0 +1,434 @@
+{% extends 'base.html' %}
+
+{% block title %}Learning Analytics - EduMate{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="/static/css/badges.css">
+{% endblock %}
+
+{% block content %}
+<div class="container py-5">
+    <h1 class="mb-4">Your Learning Analytics</h1>
+    
+    <div class="row mb-4">
+        <!-- Learning Streak Card -->
+        <div class="col-md-4 mb-4">
+            <div class="card h-100 shadow-sm">
+                <div class="card-header bg-primary text-white">
+                    <h5 class="card-title mb-0">
+                        <i class="fas fa-fire me-2"></i> Learning Streak
+                    </h5>
+                </div>
+                <div class="card-body text-center">
+                    <div class="display-1 mb-3 text-primary">{{ streak_data.current_streak }}</div>
+                    <p class="lead">Days in a row</p>
+                    <div class="mt-3">
+                        <span class="badge bg-info">Longest Streak: {{ streak_data.longest_streak }} days</span>
+                    </div>
+                </div>
+                <div class="card-footer text-center">
+                    <small class="text-muted">Keep learning daily to maintain your streak!</small>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Quiz Performance Card -->
+        <div class="col-md-4 mb-4">
+            <div class="card h-100 shadow-sm">
+                <div class="card-header bg-success text-white">
+                    <h5 class="card-title mb-0">
+                        <i class="fas fa-chart-line me-2"></i> Quiz Performance
+                    </h5>
+                </div>
+                <div class="card-body text-center">
+                    <div class="display-1 mb-3 text-success">{{ avg_score|floatformat:0 }}%</div>
+                    <p class="lead">Average Score</p>
+                    <div class="progress mt-3" style="height: 10px;">
+                        <div class="progress-bar bg-success" role="progressbar" 
+                             style="width: {{ avg_score }}%;" 
+                             aria-valuenow="{{ avg_score }}" 
+                             aria-valuemin="0" 
+                             aria-valuemax="100">
+                        </div>
+                    </div>
+                </div>
+                <div class="card-footer text-center">
+                    <small class="text-muted">Based on all your quiz attempts</small>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Activity Summary Card -->
+        <div class="col-md-4 mb-4">
+            <div class="card h-100 shadow-sm">
+                <div class="card-header bg-warning">
+                    <h5 class="card-title mb-0">
+                        <i class="fas fa-clock me-2"></i> Activity Summary
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <ul class="list-group list-group-flush">
+                        {% for activity in activities|slice:":5" %}
+                        <li class="list-group-item d-flex justify-content-between align-items-center">
+                            <div>
+                                <i class="fas fa-{{ activity.get_activity_type_display|lower }}-alt me-2"></i>
+                                {{ activity.description|truncatechars:30 }}
+                            </div>
+                            <span class="badge bg-primary rounded-pill">
+                                {{ activity.timestamp|timesince }} ago
+                            </span>
+                        </li>
+                        {% empty %}
+                        <li class="list-group-item text-center">No recent activity</li>
+                        {% endfor %}
+                    </ul>
+                </div>
+                <div class="card-footer text-center">
+                    <small class="text-muted">Your recent learning activities</small>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Badges and Achievements Section -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card shadow-sm">
+                <div class="card-header bg-purple text-white" style="background-color: #9c27b0;">
+                    <h5 class="card-title mb-0">
+                        <i class="fas fa-award me-2"></i> Your Badges & Achievements
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-8">
+                            <h6 class="border-bottom pb-2 mb-3">Recently Earned Badges</h6>
+                            {% if badges %}
+                            <div class="row g-3">
+                                {% for badge in badges|slice:":6" %}
+                                <div class="col-lg-4 col-md-6 col-sm-6">
+                                    <div class="badge-card">
+                                        <div class="badge-icon">
+                                            {% if badge.badge.image and badge.badge.image.url %}
+                                                <img src="{{ badge.badge.image.url }}" alt="{{ badge.badge.name }}">
+                                            {% else %}
+                                                {% if badge.badge.name == "First Quiz Completed" %}
+                                                    <div class="badge-fallback badge-check" title="First Quiz Completed">
+                                                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="32" height="32" fill="#1cc88a">
+                                                            <path d="M256 512A256 256 0 1 0 256 0a256 256 0 1 0 0 512zM369 209L241 337c-9.4 9.4-24.6 9.4-33.9 0l-64-64c-9.4-9.4-9.4-24.6 0-33.9s24.6-9.4 33.9 0l47 47L335 175c9.4-9.4 24.6-9.4 33.9 0s9.4 24.6 0 33.9z"/>
+                                                        </svg>
+                                                    </div>
+                                                {% elif badge.badge.name == "Quiz Master" %}
+                                                    <div class="badge-fallback badge-award" title="Quiz Master">
+                                                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 384 512" width="32" height="32" fill="#f6c23e">
+                                                            <path d="M173.8 5.5c11-7.3 25.4-7.3 36.4 0L228 17.2c6 3.9 13 5.8 20.1 5.4l21.3-1.3c13.2-.8 25.6 6.4 31.5 18.2l9.6 19.1c3.2 6.4 8.4 11.5 14.7 14.7L344.5 83c11.8 5.9 19 18.3 18.2 31.5l-1.3 21.3c-.4 7.1 1.5 14.2 5.4 20.1l11.8 17.8c7.3 11 7.3 25.4 0 36.4L366.8 228c-3.9 6-5.8 13-5.4 20.1l1.3 21.3c.8 13.2-6.4 25.6-18.2 31.5l-19.1 9.6c-6.4 3.2-11.5 8.4-14.7 14.7L301 344.5c-5.9 11.8-18.3 19-31.5 18.2l-21.3-1.3c-7.1-.4-14.2 1.5-20.1 5.4l-17.8 11.8c-11 7.3-25.4 7.3-36.4 0L156 366.8c-6-3.9-13-5.8-20.1-5.4l-21.3 1.3c-13.2 .8-25.6-6.4-31.5-18.2l-9.6-19.1c-3.2-6.4-8.4-11.5-14.7-14.7L39.5 301c-11.8-5.9-19-18.3-18.2-31.5l1.3-21.3c.4-7.1-1.5-14.2-5.4-20.1L5.5 210.2c-7.3-11-7.3-25.4 0-36.4L17.2 156c3.9-6 5.8-13 5.4-20.1l-1.3-21.3c-.8-13.2 6.4-25.6 18.2-31.5l19.1-9.6C65 70.2 70.2 65 73.4 58.6L83 39.5c5.9-11.8 18.3-19 31.5-18.2l21.3 1.3c7.1 .4 14.2-1.5 20.1-5.4L173.8 5.5zM256 224a32 32 0 1 0 -64 0 32 32 0 1 0 64 0zM112 256a144 144 0 1 0 288 0 144 144 0 1 0 -288 0zm144 64a64 64 0 1 1 0-128 64 64 0 1 1 0 128z"/>
+                                                        </svg>
+                                                    </div>
+                                                {% elif badge.badge.name == "Consistent Learner" %}
+                                                    <div class="badge-fallback badge-calendar" title="Consistent Learner">
+                                                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512" width="32" height="32" fill="#36b9cc">
+                                                            <path d="M128 0c17.7 0 32 14.3 32 32V64H288V32c0-17.7 14.3-32 32-32s32 14.3 32 32V64h48c26.5 0 48 21.5 48 48v48H0V112C0 85.5 21.5 64 48 64H96V32c0-17.7 14.3-32 32-32zM0 192H448V464c0 26.5-21.5 48-48 48H48c-26.5 0-48-21.5-48-48V192zM329 305c9.4-9.4 9.4-24.6 0-33.9s-24.6-9.4-33.9 0l-95 95-47-47c-9.4-9.4-24.6-9.4-33.9 0s-9.4 24.6 0 33.9l64 64c9.4 9.4 24.6 9.4 33.9 0L329 305z"/>
+                                                        </svg>
+                                                    </div>
+                                                {% else %}
+                                                    <div class="badge-fallback badge-medal" title="{{ badge.badge.name }}">
+                                                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 384 512" width="32" height="32" fill="#4e73df">
+                                                            <path d="M32 32C32 14.3 46.3 0 64 0H320c17.7 0 32 14.3 32 32s-14.3 32-32 32H290.5l11.4 148.2c36.7 19.9 65.7 53.2 79.5 94.7l1 3c3.3 9.8 1.6 20.5-4.4 28.8s-15.7 13.3-26 13.3H32c-10.3 0-19.9-4.9-26-13.3s-7.7-19.1-4.4-28.8l1-3c13.8-41.5 42.8-74.8 79.5-94.7L93.5 64H64C46.3 64 32 49.7 32 32zM160 384h64v96c0 17.7-14.3 32-32 32s-32-14.3-32-32V384z"/>
+                                                        </svg>
+                                                    </div>
+                                                {% endif %}
+                                            {% endif %}
+                                        </div>
+                                        <div class="badge-content">
+                                            <h6 class="badge-name">{{ badge.badge.name }}</h6>
+                                            <p class="badge-desc">{{ badge.badge.description|truncatechars:60 }}</p>
+                                        </div>
+                                        <span class="badge-earned">Earned {{ badge.earned_at|date:"M d, Y" }}</span>
+                                    </div>
+                                </div>
+                                {% endfor %}
+                            </div>
+                            {% else %}
+                            <div class="alert alert-info">
+                                <i class="fas fa-info-circle me-2"></i>
+                                You haven't earned any badges yet. Complete courses, quizzes, and stay active to earn badges!
+                            </div>
+                            {% endif %}
+                        </div>
+                        <div class="col-md-4">
+                            <h6 class="border-bottom pb-2 mb-3">Achievements</h6>
+                            {% if achievements %}
+                            <ul class="list-group list-group-flush">
+                                {% for achievement in achievements|slice:":5" %}
+                                <li class="list-group-item d-flex align-items-center">
+                                    <div class="achievement-icon me-3">
+                                        <i class="fas fa-trophy text-warning"></i>
+                                    </div>
+                                    <div>
+                                        <h6 class="mb-0">{{ achievement.achievement.name }}</h6>
+                                        <small class="text-muted">{{ achievement.date_earned|date:"M d, Y" }}</small>
+                                    </div>
+                                </li>
+                                {% endfor %}
+                            </ul>
+                            {% else %}
+                            <div class="alert alert-info">
+                                <i class="fas fa-info-circle me-2"></i>
+                                No achievements unlocked yet. Keep learning to earn achievements!
+                            </div>
+                            {% endif %}
+                            
+                            <div class="text-center mt-3">
+                                <a href="{% url 'gamification:badges' %}" class="btn btn-outline-primary btn-sm">
+                                    <i class="fas fa-medal me-1"></i> View All Badges
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Personalized Recommendations -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card shadow-sm">
+                <div class="card-header bg-info text-white">
+                    <h5 class="card-title mb-0">
+                        <i class="fas fa-lightbulb me-2"></i> Personalized Recommendations
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        {% for course in recommended_courses %}
+                        <div class="col-md-4 mb-3">
+                            <div class="card h-100">
+                                {% if course.cover_image %}
+                                <img src="{{ course.cover_image.url }}" class="card-img-top" alt="{{ course.title }}">
+                                {% else %}
+                                <div class="card-img-top bg-light text-center py-5">
+                                    <i class="fas fa-book fa-3x text-muted"></i>
+                                </div>
+                                {% endif %}
+                                <div class="card-body">
+                                    <h5 class="card-title">{{ course.title }}</h5>
+                                    <p class="card-text">{{ course.description|truncatechars:100 }}</p>
+                                </div>
+                                <div class="card-footer">
+                                    <a href="{% url 'courses:course_detail' course.slug %}" class="btn btn-sm btn-primary">
+                                        View Course
+                                    </a>
+                                </div>
+                            </div>
+                        </div>
+                        {% empty %}
+                        <div class="col-12">
+                            <div class="alert alert-info">
+                                Complete more quizzes to get personalized course recommendations!
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Areas for Improvement -->
+    <div class="row mb-4">
+        <div class="col-md-6">
+            <div class="card shadow-sm">
+                <div class="card-header bg-danger text-white">
+                    <h5 class="card-title mb-0">
+                        <i class="fas fa-exclamation-triangle me-2"></i> Areas for Improvement
+                    </h5>
+                </div>
+                <div class="card-body">
+                    {% if weak_areas %}
+                    <div class="table-responsive">
+                        <table class="table table-hover">
+                            <thead>
+                                <tr>
+                                    <th>Topic</th>
+                                    <th>Average Score</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for area in weak_areas %}
+                                <tr>
+                                    <td>{{ area.topic }}</td>
+                                    <td>
+                                        <div class="d-flex align-items-center">
+                                            <div class="progress flex-grow-1 me-2" style="height: 8px;">
+                                                <div class="progress-bar bg-danger" role="progressbar" 
+                                                     style="width: {{ area.avg_score }}%;" 
+                                                     aria-valuenow="{{ area.avg_score }}" 
+                                                     aria-valuemin="0" 
+                                                     aria-valuemax="100">
+                                                </div>
+                                            </div>
+                                            <span>{{ area.avg_score|floatformat:0 }}%</span>
+                                        </div>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                    {% else %}
+                    <div class="alert alert-info">
+                        No weak areas identified yet. Keep taking quizzes to get insights!
+                    </div>
+                    {% endif %}
+                </div>
+                <div class="card-footer">
+                    <small class="text-muted">Based on your quiz performance</small>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Learning Insights -->
+        <div class="col-md-6">
+            <div class="card shadow-sm">
+                <div class="card-header bg-purple text-white" style="background-color: #6f42c1;">
+                    <h5 class="card-title mb-0">
+                        <i class="fas fa-brain me-2"></i> Learning Insights
+                    </h5>
+                </div>
+                <div class="card-body">
+                    {% if insights %}
+                    <div class="list-group">
+                        {% for insight in insights %}
+                        <div class="list-group-item list-group-item-action">
+                            <div class="d-flex w-100 justify-content-between">
+                                <h6 class="mb-1">{{ insight.title }}</h6>
+                                <small>{{ insight.generated_at|date:"M d, Y" }}</small>
+                            </div>
+                            <p class="mb-1">{{ insight.description }}</p>
+                            <small class="text-muted">
+                                <i class="fas fa-tag me-1"></i> {{ insight.get_insight_type_display }}
+                            </small>
+                        </div>
+                        {% endfor %}
+                    </div>
+                    {% else %}
+                    <div class="alert alert-info">
+                        No learning insights available yet. Keep learning to generate insights!
+                    </div>
+                    {% endif %}
+                </div>
+                <div class="card-footer">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <small class="text-muted">AI-generated insights based on your learning patterns</small>
+                        <a href="{% url 'analytics:generate_insight' %}?next={% url 'analytics:student_dashboard' %}" class="btn btn-primary btn-sm">
+                            <i class="fas fa-sync-alt me-1"></i> Generate New Insights
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Performance Over Time -->
+    <div class="row">
+        <div class="col-12">
+            <div class="card shadow-sm">
+                <div class="card-header bg-secondary text-white">
+                    <h5 class="card-title mb-0">
+                        <i class="fas fa-chart-bar me-2"></i> Performance Over Time
+                    </h5>
+                </div>
+                <div class="card-body">
+                    {% if performance %}
+                    <canvas id="performanceChart" height="300"></canvas>
+                    {% else %}
+                    <div class="alert alert-info">
+                        No performance data available yet. Keep learning to see your progress!
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% if performance %}
+{% block extra_js %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const ctx = document.getElementById('performanceChart').getContext('2d');
+        
+        const dates = [
+            {% for perf in performance %}
+                "{{ perf.date|date:'M d' }}",
+            {% endfor %}
+        ];
+        
+        const scores = [
+            {% for perf in performance %}
+                {{ perf.score }},
+            {% endfor %}
+        ];
+        
+        const timeSpent = [
+            {% for perf in performance %}
+                {{ perf.time_spent }},
+            {% endfor %}
+        ];
+        
+        const chart = new Chart(ctx, {
+            type: 'line',
+            data: {
+                labels: dates.reverse(),
+                datasets: [
+                    {
+                        label: 'Score (%)',
+                        data: scores.reverse(),
+                        borderColor: 'rgba(75, 192, 192, 1)',
+                        backgroundColor: 'rgba(75, 192, 192, 0.2)',
+                        tension: 0.1,
+                        yAxisID: 'y'
+                    },
+                    {
+                        label: 'Time Spent (minutes)',
+                        data: timeSpent.reverse(),
+                        borderColor: 'rgba(153, 102, 255, 1)',
+                        backgroundColor: 'rgba(153, 102, 255, 0.2)',
+                        tension: 0.1,
+                        yAxisID: 'y1'
+                    }
+                ]
+            },
+            options: {
+                responsive: true,
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        position: 'left',
+                        title: {
+                            display: true,
+                            text: 'Score (%)'
+                        },
+                        max: 100
+                    },
+                    y1: {
+                        beginAtZero: true,
+                        position: 'right',
+                        title: {
+                            display: true,
+                            text: 'Time (minutes)'
+                        },
+                        grid: {
+                            drawOnChartArea: false
+                        }
+                    }
+                }
+            }
+        });
+    });
+</script>
+{% endblock %}
+{% endif %}
+{% endblock %} 

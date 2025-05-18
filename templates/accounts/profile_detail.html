@@ -1,0 +1,119 @@
+{% extends 'base.html' %}
+
+{% block title %}{{ profile_user.username }}'s Profile - EduMate{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="row">
+        <div class="col-md-4">
+            <div class="card">
+                <div class="card-body text-center">
+                    {% if profile_user.profile_picture %}
+                        <img src="{{ profile_user.profile_picture.url }}" alt="{{ profile_user.username }}" class="img-fluid rounded-circle mb-3" style="max-width: 150px;">
+                    {% else %}
+                        <div class="bg-light rounded-circle d-inline-flex justify-content-center align-items-center mb-3" style="width: 150px; height: 150px;">
+                            <span class="display-4">{{ profile_user.username.0|upper }}</span>
+                        </div>
+                    {% endif %}
+                    
+                    <h3>{{ profile_user.get_full_name|default:profile_user.username }}</h3>
+                    
+                    {% if profile_user.is_student %}
+                        <span class="badge bg-primary">Student</span>
+                    {% endif %}
+                    
+                    {% if profile_user.is_instructor %}
+                        <span class="badge bg-success">Instructor</span>
+                    {% endif %}
+                    
+                    {% if user == profile_user %}
+                        <div class="mt-3">
+                            <a href="{% url 'accounts:profile_update' %}" class="btn btn-outline-primary">Edit Profile</a>
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+            
+            {% if profile_user.streak %}
+            <div class="card mt-3">
+                <div class="card-header">
+                    <h5>Learning Streak</h5>
+                </div>
+                <div class="card-body text-center">
+                    <h2>{{ profile_user.streak.current_streak }} days</h2>
+                    <p class="text-muted">Longest streak: {{ profile_user.streak.longest_streak }} days</p>
+                </div>
+            </div>
+            {% endif %}
+        </div>
+        
+        <div class="col-md-8">
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h5>About</h5>
+                </div>
+                <div class="card-body">
+                    {% if profile_user.bio %}
+                        <p>{{ profile_user.bio }}</p>
+                    {% else %}
+                        <p class="text-muted">No bio provided.</p>
+                    {% endif %}
+                    
+                    {% if profile_user.date_of_birth %}
+                        <p><strong>Date of Birth:</strong> {{ profile_user.date_of_birth }}</p>
+                    {% endif %}
+                    
+                    <p><strong>Member since:</strong> {{ profile_user.date_joined|date:"F j, Y" }}</p>
+                </div>
+            </div>
+            
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h5>Badges</h5>
+                </div>
+                <div class="card-body">
+                    {% if profile_user.badges.all %}
+                        <div class="row">
+                            {% for badge in profile_user.badges.all %}
+                                <div class="col-2 text-center mb-3">
+                                    {% if badge.badge.image %}
+                                        <img src="{{ badge.badge.image.url }}" alt="{{ badge.badge.name }}" class="img-fluid mb-2" style="max-height: 50px;">
+                                    {% else %}
+                                        <i class="{{ badge.badge.icon }} fa-2x mb-2"></i>
+                                    {% endif %}
+                                    <div><small>{{ badge.badge.name }}</small></div>
+                                </div>
+                            {% endfor %}
+                        </div>
+                    {% else %}
+                        <p class="text-muted">No badges earned yet.</p>
+                    {% endif %}
+                </div>
+            </div>
+            
+            <div class="card">
+                <div class="card-header">
+                    <h5>Achievements</h5>
+                </div>
+                <div class="card-body">
+                    {% if profile_user.achievements.all %}
+                        <ul class="list-group">
+                            {% for achievement in profile_user.achievements.all %}
+                                <li class="list-group-item d-flex justify-content-between align-items-center">
+                                    <div>
+                                        <i class="{{ achievement.achievement.icon }}"></i>
+                                        {{ achievement.achievement.name }}
+                                    </div>
+                                    <span class="badge bg-primary rounded-pill">{{ achievement.achievement.points_reward }} pts</span>
+                                </li>
+                            {% endfor %}
+                        </ul>
+                    {% else %}
+                        <p class="text-muted">No achievements earned yet.</p>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %} 

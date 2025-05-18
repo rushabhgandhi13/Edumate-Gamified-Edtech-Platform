@@ -1,0 +1,517 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}{{ quiz.title }} - Results{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row">
+        <!-- Sidebar -->
+        <div class="col-md-3 col-lg-2 d-md-block bg-light sidebar collapse">
+            <div class="position-sticky pt-3">
+                <h5 class="sidebar-heading d-flex justify-content-between align-items-center px-3 mt-4 mb-1 text-muted">
+                    <span>{{ quiz.module.course.title }}</span>
+                </h5>
+                <ul class="nav flex-column">
+                    <li class="nav-item">
+                        <a class="nav-link" href="{% url 'course_content' quiz.module.course.slug %}">
+                            <i class="bi bi-arrow-left-circle"></i> Back to Course
+                        </a>
+                    </li>
+                </ul>
+                
+                <h6 class="sidebar-heading d-flex justify-content-between align-items-center px-3 mt-4 mb-1 text-muted">
+                    <span>Quiz Information</span>
+                </h6>
+                <div class="px-3">
+                    <p><strong>Passing Score:</strong> {{ quiz.passing_score }}%</p>
+                    <p><strong>Total Points:</strong> {{ quiz.total_points }}</p>
+                    <p><strong>Questions:</strong> {{ statistics.total_questions }}</p>
+                    <p><strong>Duration:</strong> {% if statistics.duration %}{{ statistics.duration|floatformat:1 }} minutes{% else %}N/A{% endif %}</p>
+                    <p><strong>Completed:</strong> {{ attempt.completed_at|date:"F j, Y, g:i a" }}</p>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Main content -->
+        <main class="col-md-9 ms-sm-auto col-lg-10 px-md-4">
+            <div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
+                <h1 class="h2">{{ quiz.title }} - Results</h1>
+                <div class="btn-toolbar mb-2 mb-md-0">
+                    <div class="btn-group me-2">
+                        <a href="{% url 'course_content' quiz.module.course.slug %}" class="btn btn-sm btn-outline-secondary">
+                            <i class="bi bi-arrow-left"></i> Back to Course
+                        </a>
+                        {% if not statistics.passed %}
+                        <a href="{% url 'take_quiz' quiz.id %}" class="btn btn-sm btn-outline-primary">
+                            <i class="bi bi-arrow-repeat"></i> Retake Quiz
+                        </a>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Results summary -->
+            <div class="row mb-4">
+                <div class="col-md-6">
+                    <div class="card h-100">
+                        <div class="card-header">
+                            <h5 class="mb-0">Score Summary</h5>
+                        </div>
+                        <div class="card-body">
+                            <div class="text-center mb-4">
+                                <div class="display-4 fw-bold {% if statistics.passed %}text-success{% else %}text-danger{% endif %}">
+                                    {{ statistics.score_percentage|floatformat:1 }}%
+                                </div>
+                                <div class="mt-2">
+                                    {% if statistics.passed %}
+                                    <span class="badge bg-success">PASSED</span>
+                                    {% else %}
+                                    <span class="badge bg-danger">FAILED</span>
+                                    {% endif %}
+                                </div>
+                            </div>
+                            
+                            <div class="progress mb-3" style="height: 25px;">
+                                <div class="progress-bar {% if statistics.passed %}bg-success{% else %}bg-danger{% endif %}" 
+                                     role="progressbar" 
+                                     style="width: {{ statistics.score_percentage }}%;" 
+                                     aria-valuenow="{{ statistics.score_percentage }}" 
+                                     aria-valuemin="0" 
+                                     aria-valuemax="100">
+                                    {{ statistics.score_percentage|floatformat:1 }}%
+                                </div>
+                            </div>
+                            
+                            <div class="row text-center mt-4">
+                                <div class="col-4">
+                                    <div class="h4">{{ statistics.total_questions }}</div>
+                                    <div class="text-muted">Total Questions</div>
+                                </div>
+                                <div class="col-4">
+                                    <div class="h4 text-success">{{ statistics.correct_answers }}</div>
+                                    <div class="text-muted">Correct</div>
+                                </div>
+                                <div class="col-4">
+                                    <div class="h4 text-danger">{{ statistics.incorrect_answers }}</div>
+                                    <div class="text-muted">Incorrect</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="col-md-6">
+                    <div class="card h-100">
+                        <div class="card-header">
+                            <h5 class="mb-0">Performance Analysis</h5>
+                        </div>
+                        <div class="card-body">
+                            <canvas id="performance-chart" height="200"></canvas>
+                            
+                            <div class="mt-4">
+                                <h6>Feedback:</h6>
+                                <p>
+                                    {% if statistics.score_percentage >= 90 %}
+                                    Excellent work! You have a strong understanding of the material.
+                                    {% elif statistics.score_percentage >= 80 %}
+                                    Great job! You have a good grasp of the material with a few areas to review.
+                                    {% elif statistics.score_percentage >= 70 %}
+                                    Good effort! You understand most of the material but should review some concepts.
+                                    {% elif statistics.score_percentage >= 60 %}
+                                    You've passed, but there are several areas you should review to strengthen your understanding.
+                                    {% else %}
+                                    You need to review the material more thoroughly. Focus on the questions you missed.
+                                    {% endif %}
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Detailed results -->
+            <h3 class="mb-3">Detailed Results</h3>
+            
+            <div class="accordion mb-5" id="questionsAccordion">
+                {% for question in questions %}
+                <div class="accordion-item">
+                    <h2 class="accordion-header" id="heading{{ question.id }}">
+                        <button class="accordion-button {% if not forloop.first %}collapsed{% endif %}" type="button" data-bs-toggle="collapse" data-bs-target="#collapse{{ question.id }}" aria-expanded="{% if forloop.first %}true{% else %}false{% endif %}" aria-controls="collapse{{ question.id }}">
+                            <div class="d-flex justify-content-between align-items-center w-100 me-3">
+                                <span>Question {{ forloop.counter }}: {{ question.text|truncatechars:80 }}</span>
+                                {% if answers_by_question.question.id.is_correct %}
+                                <span class="badge bg-success ms-2">Correct</span>
+                                {% else %}
+                                <span class="badge bg-danger ms-2">Incorrect</span>
+                                {% endif %}
+                            </div>
+                        </button>
+                    </h2>
+                    <div id="collapse{{ question.id }}" class="accordion-collapse collapse {% if forloop.first %}show{% endif %}" aria-labelledby="heading{{ question.id }}" data-bs-parent="#questionsAccordion">
+                        <div class="accordion-body">
+                            <p class="mb-3">{{ question.text }}</p>
+                            
+                            <div class="answers-list mt-3">
+                                {% for answer in question.answers.all %}
+                                <div class="form-check mb-2">
+                                    <div class="d-flex align-items-start">
+                                        <div class="me-2">
+                                            {% if answer.is_correct %}
+                                            <i class="bi bi-check-circle-fill text-success fs-5"></i>
+                                            {% elif answers_by_question.question.id.answer.id == answer.id and not answer.is_correct %}
+                                            <i class="bi bi-x-circle-fill text-danger fs-5"></i>
+                                            {% else %}
+                                            <i class="bi bi-circle text-muted fs-5"></i>
+                                            {% endif %}
+                                        </div>
+                                        <div>
+                                            <label class="form-check-label {% if answer.is_correct %}fw-bold text-success{% elif answers_by_question.question.id.answer.id == answer.id and not answer.is_correct %}fw-bold text-danger{% endif %}">
+                                                {{ answer.text }}
+                                                
+                                                {% if answer.is_correct %}
+                                                <span class="badge bg-success ms-2">Correct Answer</span>
+                                                {% elif answers_by_question.question.id.answer.id == answer.id and not answer.is_correct %}
+                                                <span class="badge bg-danger ms-2">Your Answer</span>
+                                                {% endif %}
+                                            </label>
+                                        </div>
+                                    </div>
+                                </div>
+                                {% endfor %}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+            
+            <!-- Next steps -->
+            <div class="card mb-5">
+                <div class="card-header">
+                    <h5 class="mb-0">Next Steps</h5>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-4 mb-3">
+                            <div class="d-flex">
+                                <div class="me-3">
+                                    <i class="bi bi-arrow-repeat fs-1 text-primary"></i>
+                                </div>
+                                <div>
+                                    <h5>Review Material</h5>
+                                    <p>Go back to the course content to review concepts you missed.</p>
+                                    <a href="{% url 'course_content' quiz.module.course.slug %}" class="btn btn-sm btn-outline-primary">
+                                        Go to Course
+                                    </a>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="col-md-4 mb-3">
+                            <div class="d-flex">
+                                <div class="me-3">
+                                    <i class="bi bi-journal-text fs-1 text-primary"></i>
+                                </div>
+                                <div>
+                                    <h5>Practice More</h5>
+                                    <p>Generate practice questions based on your weak areas.</p>
+                                    <button class="btn btn-sm btn-outline-primary" id="generate-practice-btn">
+                                        Generate Practice
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="col-md-4 mb-3">
+                            <div class="d-flex">
+                                <div class="me-3">
+                                    <i class="bi bi-arrow-right-circle fs-1 text-primary"></i>
+                                </div>
+                                <div>
+                                    <h5>Continue Learning</h5>
+                                    <p>Move on to the next module in your course.</p>
+                                    <a href="{% url 'course_content' quiz.module.course.slug %}" class="btn btn-sm btn-outline-primary">
+                                        Next Module
+                                    </a>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+</div>
+
+<!-- Practice Questions Modal -->
+<div class="modal fade" id="practiceQuestionsModal" tabindex="-1" aria-labelledby="practiceQuestionsModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="practiceQuestionsModalLabel">Practice Questions</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <div class="text-center mb-4" id="practice-loading">
+                    <div class="spinner-border text-primary" role="status">
+                        <span class="visually-hidden">Loading...</span>
+                    </div>
+                    <p class="mt-2">Generating practice questions based on your quiz results...</p>
+                </div>
+                
+                <div id="practice-questions-container" style="display: none;">
+                    <!-- Practice questions will be inserted here -->
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                <button type="button" class="btn btn-primary" id="generate-more-btn">Generate More</button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+    $(document).ready(function() {
+        // Performance chart
+        const ctx = document.getElementById('performance-chart').getContext('2d');
+        const performanceChart = new Chart(ctx, {
+            type: 'doughnut',
+            data: {
+                labels: ['Correct', 'Incorrect'],
+                datasets: [{
+                    data: [{{ statistics.correct_answers }}, {{ statistics.incorrect_answers }}],
+                    backgroundColor: ['#28a745', '#dc3545'],
+                    borderWidth: 1
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: {
+                        position: 'bottom'
+                    }
+                }
+            }
+        });
+        
+        // Generate practice questions
+        $('#generate-practice-btn').click(function() {
+            // Show modal
+            $('#practiceQuestionsModal').modal('show');
+            
+            // Show loading spinner
+            $('#practice-loading').show();
+            $('#practice-questions-container').hide();
+            
+            // Simulate API call to generate practice questions
+            setTimeout(function() {
+                // Hide loading spinner
+                $('#practice-loading').hide();
+                
+                // Generate sample practice questions based on incorrect answers
+                let practiceQuestionsHTML = '';
+                
+                // Add some sample practice questions
+                const sampleQuestions = [
+                    {
+                        question: "What is the main concept you need to review from this quiz?",
+                        options: [
+                            "Core principles of the subject",
+                            "Advanced applications",
+                            "Theoretical frameworks",
+                            "Historical context"
+                        ],
+                        correctAnswer: 0
+                    },
+                    {
+                        question: "Based on your quiz performance, which area should you focus on?",
+                        options: [
+                            "Terminology and definitions",
+                            "Problem-solving techniques",
+                            "Conceptual understanding",
+                            "Practical applications"
+                        ],
+                        correctAnswer: 2
+                    },
+                    {
+                        question: "What strategy would help you improve your understanding of this topic?",
+                        options: [
+                            "Reading more theoretical material",
+                            "Practicing with more examples",
+                            "Discussing concepts with peers",
+                            "Creating visual representations of key ideas"
+                        ],
+                        correctAnswer: 1
+                    }
+                ];
+                
+                // Generate HTML for practice questions
+                sampleQuestions.forEach((q, index) => {
+                    practiceQuestionsHTML += `
+                        <div class="card mb-3 practice-question">
+                            <div class="card-header">
+                                <h6 class="mb-0">Practice Question ${index + 1}</h6>
+                            </div>
+                            <div class="card-body">
+                                <p>${q.question}</p>
+                                <div class="practice-options">
+                                    ${q.options.map((option, i) => `
+                                        <div class="form-check mb-2">
+                                            <input class="form-check-input practice-option" type="radio" name="practice_${index}" id="practice_${index}_${i}" data-correct="${i === q.correctAnswer}">
+                                            <label class="form-check-label" for="practice_${index}_${i}">
+                                                ${option}
+                                            </label>
+                                        </div>
+                                    `).join('')}
+                                </div>
+                                <div class="feedback mt-3" style="display: none;">
+                                    <div class="alert alert-success correct-feedback" style="display: none;">
+                                        <i class="bi bi-check-circle-fill me-2"></i> Correct! Good job.
+                                    </div>
+                                    <div class="alert alert-danger incorrect-feedback" style="display: none;">
+                                        <i class="bi bi-x-circle-fill me-2"></i> Incorrect. Try again.
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    `;
+                });
+                
+                // Add HTML to container
+                $('#practice-questions-container').html(practiceQuestionsHTML);
+                $('#practice-questions-container').show();
+                
+                // Handle practice question answers
+                $('.practice-option').change(function() {
+                    const isCorrect = $(this).data('correct');
+                    const feedbackContainer = $(this).closest('.practice-question').find('.feedback');
+                    const correctFeedback = feedbackContainer.find('.correct-feedback');
+                    const incorrectFeedback = feedbackContainer.find('.incorrect-feedback');
+                    
+                    feedbackContainer.show();
+                    
+                    if (isCorrect) {
+                        correctFeedback.show();
+                        incorrectFeedback.hide();
+                    } else {
+                        correctFeedback.hide();
+                        incorrectFeedback.show();
+                    }
+                });
+                
+            }, 2000); // Simulate 2-second delay for API call
+        });
+        
+        // Generate more practice questions
+        $('#generate-more-btn').click(function() {
+            // Show loading spinner
+            $('#practice-loading').show();
+            $('#practice-questions-container').hide();
+            
+            // Simulate API call to generate more practice questions
+            setTimeout(function() {
+                // Hide loading spinner
+                $('#practice-loading').hide();
+                
+                // Generate new sample practice questions
+                let practiceQuestionsHTML = '';
+                
+                // Add some new sample practice questions
+                const newSampleQuestions = [
+                    {
+                        question: "Which learning resource would be most beneficial based on your quiz results?",
+                        options: [
+                            "Interactive tutorials",
+                            "Textbook readings",
+                            "Video lectures",
+                            "Peer discussions"
+                        ],
+                        correctAnswer: 0
+                    },
+                    {
+                        question: "What is the most effective way to reinforce the concepts you missed?",
+                        options: [
+                            "Creating flashcards",
+                            "Teaching the material to someone else",
+                            "Writing summary notes",
+                            "Solving practice problems"
+                        ],
+                        correctAnswer: 3
+                    },
+                    {
+                        question: "How can you apply the knowledge from this quiz in a practical scenario?",
+                        options: [
+                            "Through case studies",
+                            "In real-world projects",
+                            "By analyzing examples",
+                            "Through simulations"
+                        ],
+                        correctAnswer: 1
+                    }
+                ];
+                
+                // Generate HTML for new practice questions
+                newSampleQuestions.forEach((q, index) => {
+                    practiceQuestionsHTML += `
+                        <div class="card mb-3 practice-question">
+                            <div class="card-header">
+                                <h6 class="mb-0">Practice Question ${index + 4}</h6>
+                            </div>
+                            <div class="card-body">
+                                <p>${q.question}</p>
+                                <div class="practice-options">
+                                    ${q.options.map((option, i) => `
+                                        <div class="form-check mb-2">
+                                            <input class="form-check-input practice-option" type="radio" name="practice_${index + 3}" id="practice_${index + 3}_${i}" data-correct="${i === q.correctAnswer}">
+                                            <label class="form-check-label" for="practice_${index + 3}_${i}">
+                                                ${option}
+                                            </label>
+                                        </div>
+                                    `).join('')}
+                                </div>
+                                <div class="feedback mt-3" style="display: none;">
+                                    <div class="alert alert-success correct-feedback" style="display: none;">
+                                        <i class="bi bi-check-circle-fill me-2"></i> Correct! Good job.
+                                    </div>
+                                    <div class="alert alert-danger incorrect-feedback" style="display: none;">
+                                        <i class="bi bi-x-circle-fill me-2"></i> Incorrect. Try again.
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    `;
+                });
+                
+                // Append HTML to container
+                $('#practice-questions-container').append(practiceQuestionsHTML);
+                $('#practice-questions-container').show();
+                
+                // Handle practice question answers for new questions
+                $('.practice-option').change(function() {
+                    const isCorrect = $(this).data('correct');
+                    const feedbackContainer = $(this).closest('.practice-question').find('.feedback');
+                    const correctFeedback = feedbackContainer.find('.correct-feedback');
+                    const incorrectFeedback = feedbackContainer.find('.incorrect-feedback');
+                    
+                    feedbackContainer.show();
+                    
+                    if (isCorrect) {
+                        correctFeedback.show();
+                        incorrectFeedback.hide();
+                    } else {
+                        correctFeedback.hide();
+                        incorrectFeedback.show();
+                    }
+                });
+                
+            }, 2000); // Simulate 2-second delay for API call
+        });
+    });
+</script>
+{% endblock %} 

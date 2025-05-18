@@ -1,0 +1,162 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}{{ user.username }} - Profile{% endblock %}
+
+{% block content %}
+<div class="container mt-5">
+    <div class="row">
+        <div class="col-md-4">
+            <div class="card">
+                <div class="card-body text-center">
+                    {% if user.profile_picture %}
+                        <img src="{{ user.profile_picture.url }}" alt="{{ user.username }}" class="rounded-circle img-fluid mb-3" style="max-width: 150px;">
+                    {% else %}
+                        <img src="{% static 'images/default-avatar.png' %}" alt="{{ user.username }}" class="rounded-circle img-fluid mb-3" style="max-width: 150px;">
+                    {% endif %}
+                    <h4 class="card-title">{{ user.get_full_name|default:user.username }}</h4>
+                    <p class="text-muted">
+                        {% if user.is_student %}Student{% endif %}
+                        {% if user.is_instructor %}Instructor{% endif %}
+                    </p>
+                    <div class="d-flex justify-content-center mb-3">
+                        <span class="badge bg-primary me-2">Level {{ user.level }}</span>
+                        <span class="badge bg-success">{{ user.points }} Points</span>
+                    </div>
+                    <a href="{% url 'accounts:edit_profile' %}" class="btn btn-primary">Edit Profile</a>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-md-8">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0">Profile Information</h5>
+                </div>
+                <div class="card-body">
+                    <div class="row mb-3">
+                        <div class="col-sm-3">
+                            <h6 class="mb-0">Full Name</h6>
+                        </div>
+                        <div class="col-sm-9 text-secondary">
+                            {{ user.get_full_name|default:"Not provided" }}
+                        </div>
+                    </div>
+                    <div class="row mb-3">
+                        <div class="col-sm-3">
+                            <h6 class="mb-0">Email</h6>
+                        </div>
+                        <div class="col-sm-9 text-secondary">
+                            {{ user.email|default:"Not provided" }}
+                        </div>
+                    </div>
+                    <div class="row mb-3">
+                        <div class="col-sm-3">
+                            <h6 class="mb-0">Date of Birth</h6>
+                        </div>
+                        <div class="col-sm-9 text-secondary">
+                            {{ user.date_of_birth|date:"F d, Y"|default:"Not provided" }}
+                        </div>
+                    </div>
+                    <div class="row mb-3">
+                        <div class="col-sm-3">
+                            <h6 class="mb-0">Location</h6>
+                        </div>
+                        <div class="col-sm-9 text-secondary">
+                            {{ profile.location|default:"Not provided" }}
+                        </div>
+                    </div>
+                    <div class="row mb-3">
+                        <div class="col-sm-3">
+                            <h6 class="mb-0">Website</h6>
+                        </div>
+                        <div class="col-sm-9 text-secondary">
+                            {% if profile.website %}
+                                <a href="{{ profile.website }}" target="_blank">{{ profile.website }}</a>
+                            {% else %}
+                                Not provided
+                            {% endif %}
+                        </div>
+                    </div>
+                    <div class="row mb-3">
+                        <div class="col-sm-3">
+                            <h6 class="mb-0">Interests</h6>
+                        </div>
+                        <div class="col-sm-9 text-secondary">
+                            {{ profile.interests|default:"Not provided" }}
+                        </div>
+                    </div>
+                    <div class="row mb-3">
+                        <div class="col-sm-3">
+                            <h6 class="mb-0">Learning Style</h6>
+                        </div>
+                        <div class="col-sm-9 text-secondary">
+                            {{ user.learning_style|default:"Not provided" }}
+                        </div>
+                    </div>
+                    <div class="row mb-3">
+                        <div class="col-sm-3">
+                            <h6 class="mb-0">Bio</h6>
+                        </div>
+                        <div class="col-sm-9 text-secondary">
+                            {{ user.bio|default:"Not provided" }}
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="card mt-3">
+                <div class="card-header">
+                    <h5 class="mb-0">Preferences</h5>
+                </div>
+                <div class="card-body">
+                    <div class="row mb-3">
+                        <div class="col-sm-6">
+                            <h6 class="mb-0">Content Difficulty Preference</h6>
+                        </div>
+                        <div class="col-sm-6 text-secondary">
+                            {{ profile.get_content_difficulty_preference_display }}
+                        </div>
+                    </div>
+                    <div class="row mb-3">
+                        <div class="col-sm-6">
+                            <h6 class="mb-0">Email Notifications</h6>
+                        </div>
+                        <div class="col-sm-6 text-secondary">
+                            {% if profile.email_notifications %}
+                                <span class="text-success">Enabled</span>
+                            {% else %}
+                                <span class="text-danger">Disabled</span>
+                            {% endif %}
+                        </div>
+                    </div>
+                    <div class="row mb-3">
+                        <div class="col-sm-6">
+                            <h6 class="mb-0">Achievement Notifications</h6>
+                        </div>
+                        <div class="col-sm-6 text-secondary">
+                            {% if profile.achievement_notifications %}
+                                <span class="text-success">Enabled</span>
+                            {% else %}
+                                <span class="text-danger">Disabled</span>
+                            {% endif %}
+                        </div>
+                    </div>
+                    <div class="row mb-3">
+                        <div class="col-sm-6">
+                            <h6 class="mb-0">Reminder Notifications</h6>
+                        </div>
+                        <div class="col-sm-6 text-secondary">
+                            {% if profile.reminder_notifications %}
+                                <span class="text-success">Enabled</span>
+                            {% else %}
+                                <span class="text-danger">Disabled</span>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %} 

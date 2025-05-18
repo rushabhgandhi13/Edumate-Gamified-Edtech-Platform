@@ -1,0 +1,76 @@
+{% extends 'base.html' %}
+
+{% block title %}Badges - EduMate{% endblock %}
+
+{% block content %}
+<div class="container py-5">
+    <h1 class="mb-4">Badges</h1>
+    
+    <div class="row mb-4">
+        <div class="col-md-8">
+            <div class="progress" style="height: 30px;">
+                {% with total_badges=all_badges.count earned_badges=user_badges.count %}
+                {% if total_badges > 0 %}
+                <div class="progress-bar bg-info" role="progressbar" 
+                     style="width: {{ earned_badges|floatformat:0 }}%;" 
+                     aria-valuenow="{{ earned_badges }}" 
+                     aria-valuemin="0" 
+                     aria-valuemax="{{ total_badges }}">
+                    {{ earned_badges }} / {{ total_badges }} Badges
+                </div>
+                {% else %}
+                <div class="progress-bar" role="progressbar" style="width: 0%;" 
+                     aria-valuenow="0" aria-valuemin="0" aria-valuemax="100">
+                    No badges available
+                </div>
+                {% endif %}
+                {% endwith %}
+            </div>
+        </div>
+        <div class="col-md-4 text-end">
+            <h4>
+                <span class="badge bg-info">{{ user_badges.count }}</span> Badges Earned
+            </h4>
+        </div>
+    </div>
+    
+    <div class="row">
+        {% for badge in all_badges %}
+        <div class="col-md-3 mb-4">
+            <div class="card h-100 text-center {% if badge in user_badges %}border-info{% else %}border-light{% endif %}">
+                <div class="card-header {% if badge in user_badges %}bg-info text-white{% endif %}">
+                    <h5 class="card-title mb-0">{{ badge.name }}</h5>
+                </div>
+                <div class="card-body">
+                    <div class="badge-icon mb-3">
+                        {% if badge.image %}
+                        <img src="{{ badge.image.url }}" alt="{{ badge.name }}" class="img-fluid" style="max-height: 100px;">
+                        {% else %}
+                        <i class="fas fa-award fa-5x text-{{ badge.color|default:'primary' }}"></i>
+                        {% endif %}
+                    </div>
+                    <p class="card-text">{{ badge.description }}</p>
+                </div>
+                <div class="card-footer">
+                    {% if badge in user_badges %}
+                    <span class="badge bg-info">
+                        <i class="fas fa-check-circle"></i> Earned
+                    </span>
+                    {% else %}
+                    <span class="badge bg-secondary">
+                        <i class="fas fa-lock"></i> Not Earned
+                    </span>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+        {% empty %}
+        <div class="col-12">
+            <div class="alert alert-info">
+                No badges available yet. Check back soon!
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+</div>
+{% endblock %} 

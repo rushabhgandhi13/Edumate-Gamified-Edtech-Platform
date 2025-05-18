@@ -1,0 +1,137 @@
+{% extends 'base.html' %}
+{% load crispy_forms_tags %}
+
+{% block title %}{% if form.instance.pk %}Edit{% else %}Create{% endif %} Course - EduMate{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="row justify-content-center">
+        <div class="col-lg-8">
+            <div class="card shadow">
+                <div class="card-header bg-primary text-white">
+                    <h3 class="card-title mb-0">
+                        {% if form.instance.pk %}
+                            Edit Course: {{ form.instance.title }}
+                        {% else %}
+                            Create New Course
+                        {% endif %}
+                    </h3>
+                </div>
+                <div class="card-body">
+                    <form method="post" enctype="multipart/form-data" action="{% if form.instance.pk %}{% url 'courses:edit_course' form.instance.id %}{% else %}{% url 'courses:create_course' %}{% endif %}">
+                        {% csrf_token %}
+                        
+                        <div class="row">
+                            <div class="col-md-8">
+                                {{ form.title|as_crispy_field }}
+                                {{ form.overview|as_crispy_field }}
+                                {{ form.description|as_crispy_field }}
+                            </div>
+                            <div class="col-md-4">
+                                {{ form.category|as_crispy_field }}
+                                {{ form.difficulty|as_crispy_field }}
+                                {{ form.is_published|as_crispy_field }}
+                                {{ form.price|as_crispy_field }}
+                            </div>
+                        </div>
+                        
+                        <div class="row">
+                            <div class="col-md-6">
+                                {{ form.thumbnail|as_crispy_field }}
+                                {% if form.instance.thumbnail %}
+                                <div id="current-thumbnail" class="mb-3">
+                                    <p class="text-muted">Current thumbnail:</p>
+                                    <img src="{{ form.instance.thumbnail.url }}" class="img-thumbnail" style="max-height: 200px">
+                                </div>
+                                {% endif %}
+                                <div id="thumbnail-preview"></div>
+                            </div>
+                            <div class="col-md-6">
+                                {{ form.prerequisites|as_crispy_field }}
+                                {{ form.learning_outcomes|as_crispy_field }}
+                            </div>
+                        </div>
+                        
+                        <div class="d-flex justify-content-between mt-4">
+                            <a href="{% url 'courses:instructor_courses' %}" class="btn btn-outline-secondary">
+                                <i class="fas fa-arrow-left"></i> Back to My Courses
+                            </a>
+                            <button type="submit" class="btn btn-primary">
+                                <i class="fas fa-save"></i> 
+                                {% if form.instance.pk %}Update{% else %}Create{% endif %} Course
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+            
+            {% if form.instance.pk %}
+            <div class="card mt-4">
+                <div class="card-header bg-info text-white">
+                    <h4 class="card-title mb-0">Course Modules</h4>
+                </div>
+                <div class="card-body">
+                    {% if form.instance.modules.all %}
+                        <div class="list-group">
+                            {% for module in form.instance.modules.all %}
+                                <div class="list-group-item d-flex justify-content-between align-items-center">
+                                    <div>
+                                        <h5 class="mb-1">{{ module.title }}</h5>
+                                        <small class="text-muted">{{ module.lessons.count }} lessons, {{ module.quizzes.count }} quizzes</small>
+                                    </div>
+                                    <div class="btn-group">
+                                        <a href="{% url 'courses:module_content_list' module.id %}" class="btn btn-sm btn-outline-info">
+                                            <i class="fas fa-list"></i> Content
+                                        </a>
+                                        <a href="{% url 'courses:edit_course_modules' form.instance.id %}" class="btn btn-sm btn-outline-primary">
+                                            <i class="fas fa-edit"></i> Edit
+                                        </a>
+                                    </div>
+                                </div>
+                            {% endfor %}
+                        </div>
+                    {% else %}
+                        <div class="alert alert-info">
+                            <i class="fas fa-info-circle"></i> No modules added yet.
+                        </div>
+                    {% endif %}
+                    
+                    <div class="mt-3">
+                        <a href="{% url 'courses:edit_course_modules' form.instance.id %}" class="btn btn-success">
+                            <i class="fas fa-plus-circle"></i> Manage Modules
+                        </a>
+                    </div>
+                </div>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    // Preview thumbnail image when selected
+    document.addEventListener('DOMContentLoaded', function() {
+        const thumbnailInput = document.getElementById('id_thumbnail');
+        if (thumbnailInput) {
+            thumbnailInput.addEventListener('change', function() {
+                if (this.files && this.files[0]) {
+                    const reader = new FileReader();
+                    reader.onload = function(e) {
+                        let previewDiv = document.getElementById('thumbnail-preview');
+                        if (!previewDiv) {
+                            previewDiv = document.createElement('div');
+                            previewDiv.id = 'thumbnail-preview';
+                            previewDiv.className = 'mt-2';
+                            thumbnailInput.parentNode.appendChild(previewDiv);
+                        }
+                        previewDiv.innerHTML = `<img src="${e.target.result}" class="img-thumbnail" style="max-height: 200px">`;
+                    }
+                    reader.readAsDataURL(this.files[0]);
+                }
+            });
+        }
+    });
+</script>
+{% endblock %} 

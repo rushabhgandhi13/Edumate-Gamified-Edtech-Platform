@@ -1,0 +1,151 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Quiz Results{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'css/quiz.css' %}">
+{% endblock %}
+
+{% block content %}
+<div class="container my-4">
+    <div class="row mb-4">
+        <div class="col-md-8">
+            <h2 class="display-5">Quiz Results</h2>
+            <p class="lead">{{ attempt.title }}</p>
+        </div>
+        <div class="col-md-4 text-end">
+            <a href="{% url 'courses:generate_personalized_quiz' attempt.quiz.course.id %}" class="btn btn-primary">
+                <i class="fas fa-sync-alt me-2"></i> Try Another Challenge
+            </a>
+        </div>
+    </div>
+    
+    <div class="row mb-4">
+        <div class="col-lg-6 mb-4 mb-lg-0">
+            <div class="card shadow h-100">
+                <div class="card-header {% if attempt.score >= 80 %}bg-success text-white{% elif attempt.score >= 60 %}bg-warning{% else %}bg-danger text-white{% endif %}">
+                    <h5 class="card-title mb-0">Your Score</h5>
+                </div>
+                <div class="card-body text-center">
+                    <div class="display-1 mb-3 {% if attempt.score >= 80 %}text-success{% elif attempt.score >= 60 %}text-warning{% else %}text-danger{% endif %}">
+                        {{ attempt.score|floatformat:0 }}%
+                    </div>
+                    <p class="lead">{{ attempt.correct_answers }} out of {{ attempt.total_questions }} correct</p>
+                    
+                    <div class="progress mt-3" style="height: 20px;">
+                        <div class="progress-bar {% if attempt.score >= 80 %}bg-success{% elif attempt.score >= 60 %}bg-warning{% else %}bg-danger{% endif %}" 
+                             role="progressbar" 
+                             style="width: {{ attempt.score }}%;" 
+                             aria-valuenow="{{ attempt.score }}" 
+                             aria-valuemin="0" 
+                             aria-valuemax="100">
+                            {{ attempt.score|floatformat:0 }}%
+                        </div>
+                    </div>
+                </div>
+                <div class="card-footer text-center">
+                    <small class="text-muted">Completed on {{ attempt.created_at|date:"F j, Y, g:i a" }}</small>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-lg-6">
+            <div class="card shadow h-100">
+                <div class="card-header bg-info text-white">
+                    <h5 class="card-title mb-0">Learning Feedback</h5>
+                </div>
+                <div class="card-body">
+                    <div class="d-flex align-items-center mb-3">
+                        <div class="me-3">
+                            <i class="fas fa-robot fa-2x text-info"></i>
+                        </div>
+                        <div>
+                            <h5 class="mb-1">Personalized Analysis</h5>
+                            <p class="text-muted mb-0">Based on your performance</p>
+                        </div>
+                    </div>
+                    
+                    <div class="alert {% if attempt.score >= 80 %}alert-success{% elif attempt.score >= 60 %}alert-warning{% else %}alert-danger{% endif %}">
+                        <p class="mb-0">{{ feedback }}</p>
+                    </div>
+                    
+                    {% if attempt.score < 80 %}
+                    <div class="mt-4">
+                        <h6>Recommendations:</h6>
+                        <ul class="mb-0">
+                            {% if attempt.score < 60 %}
+                            <li>Review core concepts in these topic areas</li>
+                            <li>Practice with fundamental exercises</li>
+                            <li>Consider requesting additional support</li>
+                            {% else %}
+                            <li>Target your weak areas for focused review</li>
+                            <li>Try additional practice exercises</li>
+                            {% endif %}
+                            <li>Retake a personalized quiz to measure progress</li>
+                        </ul>
+                    </div>
+                    {% endif %}
+                </div>
+                <div class="card-footer">
+                    <a href="{% url 'analytics:student_dashboard' %}" class="btn btn-outline-info w-100">
+                        <i class="fas fa-chart-line me-2"></i> View Learning Analytics
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="row">
+        <div class="col-12">
+            <div class="card shadow">
+                <div class="card-header bg-primary text-white">
+                    <h5 class="card-title mb-0">Continue Your Learning Journey</h5>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-4 mb-3">
+                            <div class="card h-100">
+                                <div class="card-body text-center">
+                                    <i class="fas fa-book fa-3x text-primary mb-3"></i>
+                                    <h5 class="card-title">Back to Courses</h5>
+                                    <p class="card-text">Return to your courses and continue learning.</p>
+                                    <a href="{% url 'courses:my_courses' %}" class="btn btn-outline-primary">
+                                        My Courses
+                                    </a>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="col-md-4 mb-3">
+                            <div class="card h-100">
+                                <div class="card-body text-center">
+                                    <i class="fas fa-sync-alt fa-3x text-success mb-3"></i>
+                                    <h5 class="card-title">New Challenge</h5>
+                                    <p class="card-text">Generate another personalized quiz on this course.</p>
+                                    <a href="{% url 'courses:generate_personalized_quiz' attempt.quiz.course.id %}" class="btn btn-outline-success">
+                                        Start Quiz
+                                    </a>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="col-md-4 mb-3">
+                            <div class="card h-100">
+                                <div class="card-body text-center">
+                                    <i class="fas fa-trophy fa-3x text-warning mb-3"></i>
+                                    <h5 class="card-title">Achievements</h5>
+                                    <p class="card-text">View your learning milestones and badges.</p>
+                                    <a href="{% url 'gamification:achievements' %}" class="btn btn-outline-warning">
+                                        My Achievements
+                                    </a>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %} 
